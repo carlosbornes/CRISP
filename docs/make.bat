@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=check_package
+set SPHINXPROJ=CRISP
 
 if "%1" == "" goto help
 

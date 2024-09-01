@@ -1,4 +1,4 @@
-name: docs_check_package
+name: docs_CRISP
 channels:
 
   - defaults

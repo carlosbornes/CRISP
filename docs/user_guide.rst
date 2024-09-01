@@ -1,4 +1,12 @@
 User Guide
 ===============
 
-This page details how to use check_package. 
+This page details how to use CRISP. 
+
+Modules
+--------
+
+
+Perfomance Tips
+----------------
+

@@ -1,24 +1,47 @@
-.. check_package documentation master file, created by
+.. CRISP documentation master file, created by
    sphinx-quickstart on Thu Mar 15 13:55:56 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to check_package's documentation!
+Welcome to CRISP's documentation!
 =========================================================
+CRISP is a post-simulation analysis package built on the 
+foundation of Atomic Simulation Environment (ASE). 
+It is designed to unlock the secrets hidden within your 
+molecular dynamics simulations, offering a comprehensive 
+suite of tools for in-depth exploration for both analysis and visulaisation.
+
+The CRISP python code is developed through our GitLab repository:
+https://gitlab.com/praguelab
+
 
 .. grid:: 1 1 2 2
 
-    .. grid-item-card:: Getting Started
+    .. grid-item-card:: Introduction
       :margin: 0 3 0 0
       
-      Learn the basics of using check_package.
+      Learn the basics of using CRISP.
 
-      .. button-link:: ./getting_started.html
+      .. button-link:: ./Introduction.html
          :color: primary
          :outline:
          :expand:
 
-         To the Getting Started Guide
+         To the Introduction
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card:: Installation
+      :margin: 0 3 0 0
+      
+      Learn the basics of using CRISP.
+
+      .. button-link:: ./Installation.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the Installation
 
       
 
@@ -33,13 +56,25 @@ Welcome to check_package's documentation!
          :expand:
 
          To the User Guide
+
+    .. grid-item-card::  Tutorials
+      :margin: 0 3 0 0
+      
+      How to contribute to CRISP.
+
+      .. button-link:: ./Tutorials.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the Tutorials
       
       
 
     .. grid-item-card:: API Reference
       :margin: 0 3 0 0
       
-      How to use the API of check_package.
+      How to use the API of CRISP.
 
       .. button-link:: ./api.html
          :color: primary
@@ -53,7 +88,7 @@ Welcome to check_package's documentation!
     .. grid-item-card::  Developer Guide
       :margin: 0 3 0 0
       
-      How to contribute to check_package.
+      How to contribute to CRISP.
 
       .. button-link:: ./developer_guide.html
          :color: primary
@@ -64,12 +99,20 @@ Welcome to check_package's documentation!
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 6
    :hidden:
    :titlesonly:
 
-   getting_started
+   introduction
+   installation
+   tutorials
    user_guide
    api
    developer_guide
 
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
