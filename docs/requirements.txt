@@ -1,0 +1,13 @@
+numpy
+matplotlib
+seaborn
+joblib
+statsmodels
+pandas
+plotly
+networkx
+ase
+scikit-learn
+jupyter
+sphinx
+sphinx_rtd_theme
