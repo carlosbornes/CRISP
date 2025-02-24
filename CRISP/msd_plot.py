@@ -157,7 +157,7 @@ class DiffusionCoefficient:
                     self.timesteps[start:end],
                     self.xyz_segment_ensemble_average[segment_no][sym_index])
                 
-            # Calculate RMSD for each particle at each time step
+        # Calculate RMSD for each particle at each time step
         self.rmsd_values = np.zeros((self.no_of_types_of_atoms, len(self.traj) - ignore_n_images))
 
         for image_no in range(len(self.traj)):
@@ -209,7 +209,6 @@ class DiffusionCoefficient:
 
         """
 
-        # Define some aesthetic variables
         # Create an x-axis that is in a more intuitive format for the view
         graph_timesteps = self.timesteps / fs_conversion
 
@@ -236,75 +235,40 @@ class DiffusionCoefficient:
                
         xt = graph_timesteps[:-1]
         y = (x[1]+y[1]+z[1])/3
-        
+
         plt.loglog(xt, y, label="Original")
         plt.xlabel("Time (fs)")
         plt.ylabel("MSD_Fitted (Ang2)")
         plt.title("Log-Log Plot")
         plt.show()
         
-        ### Diffusion Coeff calculation for Overall
 
-        model = sm.OLS(y, xt)
-        results = model.fit()
-        m  = results.params[0] 
-    
-        plt.plot(xt, y, label="Original")
+        A = xt.reshape(-1, 1)  # Design matrix with only the x terms (no intercept)
+        m, residuals, rank, s = np.linalg.lstsq(A, y, rcond=None)  # Fit y = mx
+
+        diffusion_coefficient = m[0] 
+
+        y_fitted = A @ m
+        residual_std_error = np.sqrt(np.sum((y - y_fitted)**2) / (len(xt) - 1))  
+
+        # Plot fitted line
+        plt.plot(xt, y, label="Original MSD")
+        plt.plot(xt, y_fitted, label="Fitted MSD")
         plt.xlabel("Time (fs)")
-        plt.ylabel("MSD_Fitted (Ang2)")
-        plt.plot(xt, m*xt, label="Fit")
-        plt.title("Diffsion Plot")
-        print("FITTING LINE (Diff Coeff/Meter^2 Sec^-1, STD Err):", m*10**(-5))
+        plt.ylabel("Mean Square Displacement (Ang^2)")
+        plt.title("MSD vs Time (Linear Fit)")
         plt.legend()
         plt.show()
+
+        # Calculate standard error for diffusion coefficient (propagate from residuals)
+        std_error = residual_std_error
+
+        print("Diffusion Coefficient (m^2/sec^-1):", diffusion_coefficient * 10**(-5))
+        print(f"Standard Error: {std_error * 10**(-5):.2e}")
         
-        
-        return y, xt     
-    
-    
-    def msd_time(self, ax=None, show=False):
-        """
 
-        Auto-plot of Diffusion Coefficient data. Provides basic framework for visualising analysis.
-
-         Parameters:
-            ax (Matplotlib.axes.Axes)
-                Axes object on to which plot can be created
-            show (Boolean)
-                Whether or not to show the created plot. Default: False
-
-        """
-
-        # Define some aesthetic variables
-        # Create an x-axis that is in a more intuitive format for the view
-        graph_timesteps = self.timesteps / fs_conversion
-
-        for segment_no in range(self.no_of_segments):
-            start = segment_no * self.len_segments
-            end = start + self.len_segments
-            label = None
-
-                    
-            ### total XYZ
-            x = []
-            y = []
-            z = []
-            
-            for sym_index in range(self.no_of_types_of_atoms):
-                for xyz in range(3):
-                    if segment_no == 0:
-                    # Add scatter graph  for the mean square displacement data in this segment  
-                        x.append(self.xyz_segment_ensemble_average[segment_no][sym_index][0])
-                        y.append(self.xyz_segment_ensemble_average[segment_no][sym_index][1])
-                        z.append(self.xyz_segment_ensemble_average[segment_no][sym_index][2])
-                    
-        
-               
-        xt = graph_timesteps[:-1]
-        y = (x[1]+y[1]+z[1])/3
-        
-        
-        return y, xt   
+        return diffusion_coefficient * 10**(-5), std_error * 10**(-5)
+       
 
 
 def main(args):

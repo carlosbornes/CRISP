@@ -3,12 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to CRISP's documentation!
+Welcome to CRISP's documentation! (Under development)
 =========================================================
 CRISP is a post-simulation analysis package built on the 
 foundation of Atomic Simulation Environment (ASE). 
 It is designed to unlock the secrets hidden within your 
-molecular dynamics simulations, offering a comprehensive 
+molecular simulations, offering a comprehensive 
 suite of tools for in-depth exploration for both analysis and visulaisation.
 
 The CRISP python code is developed through our GitLab repository:

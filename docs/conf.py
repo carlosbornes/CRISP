@@ -25,9 +25,8 @@ import CRISP
 # -- Project information -----------------------------------------------------
 
 project = 'CRISP'
-copyright = ("2024, IS. Project structure based on the "
-             "Computational Molecular Science Python Cookiecutter version 1.1")
-author = 'IS'
+copyright = ("2024, Indranil Saha, Lukas Grajciar")
+author = 'Indranil Saha, Lukas Grajciar'
 
 # The short X.Y version
 version = ''

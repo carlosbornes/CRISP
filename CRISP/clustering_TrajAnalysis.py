@@ -31,7 +31,7 @@ def analyze_trajectory(trajectory_path, atom_indices_path, threshold, min_sample
 
     for frame_number, structure in enumerate(trajectory):
         if frame_number % skip_frames != 0:
-            continue  # Skip this frame if it's not the 10th frame
+            continue  
         
         X = np.array([structure.positions[i] for i in atom_indices])
         cell = structure.get_cell()

@@ -1,4 +1,4 @@
-"""A python paclahe for Post-simulation analysis and visulalisation"""
+"""A python package for Post-simulation analysis and visulalisation"""
 
 # Add imports here
 from .atom_indices import *
