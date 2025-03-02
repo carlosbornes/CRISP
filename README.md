@@ -78,7 +78,8 @@ Email: lukas.grajciar@natur.cuni.cz
 ### Contributors
 If there is something you would like to see added to this package or if you would like to contribute, please email us at sahai@natur.cuni.cz or daniel.willimetz@natur.cuni.cz
 
-### Testers
+### EXAMPLE
+https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb
 
 ### Docs
 Master-Doc (Let's update in the Doc)
