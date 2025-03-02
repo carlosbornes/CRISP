@@ -80,3 +80,7 @@ If there is something you would like to see added to this package or if you woul
 
 ### Testers
 
+### Docs
+Master-Doc (Let's update in the Doc)
+https://docs.google.com/document/d/14Bk8PkkE2FewRq1oMdXlqDkW0xUFwhyhYRJRxv559Ro/edit?usp=sharing
+
