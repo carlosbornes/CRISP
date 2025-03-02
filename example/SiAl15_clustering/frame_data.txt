@@ -1,0 +1,47 @@
+DBSCAN Clustering Analysis Results
+================================
+
+Parameters:
+  Threshold (eps): 3.0
+  Min Samples: 3
+
+Results:
+  Number of Clusters: 10
+  Number of Outliers: 9
+  Silhouette Score: 0.2932
+  Average Cluster Size: 6.30
+
+Detailed Cluster Information:
+  Cluster 0: 14 points
+    Original atom indices: [576, 580, 583, 589, 590, 592, 594, 605, 606, 628, 632, 635, 643, 644]
+
+  Cluster 1: 9 points
+    Original atom indices: [577, 593, 597, 601, 604, 613, 621, 633, 640]
+
+  Cluster 2: 4 points
+    Original atom indices: [581, 609, 618, 634]
+
+  Cluster 3: 7 points
+    Original atom indices: [579, 582, 586, 627, 639, 641, 647]
+
+  Cluster 4: 10 points
+    Original atom indices: [585, 588, 591, 600, 608, 617, 625, 629, 637, 645]
+
+  Cluster 5: 5 points
+    Original atom indices: [596, 611, 616, 620, 646]
+
+  Cluster 6: 3 points
+    Original atom indices: [578, 598, 638]
+
+  Cluster 7: 4 points
+    Original atom indices: [595, 599, 603, 636]
+
+  Cluster 8: 4 points
+    Original atom indices: [607, 612, 623, 642]
+
+  Cluster 9: 3 points
+    Original atom indices: [622, 630, 631]
+
+Outlier Information:
+  9 outliers
+    Original atom indices: [584, 587, 602, 610, 614, 615, 619, 624, 626]

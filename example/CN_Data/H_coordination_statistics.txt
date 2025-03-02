@@ -1,0 +1,11 @@
+Coordination Analysis for H Atoms
+======================================
+
+Overall Average Percentages:
+  CN=1: 3.61%
+  CN=2: 18.10%
+  CN=3: 30.28%
+  CN=4: 27.18%
+  CN=5: 16.03%
+  CN=6: 4.68%
+  CN=7: 0.12%

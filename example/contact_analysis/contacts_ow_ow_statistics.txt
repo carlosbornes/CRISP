@@ -1,0 +1,80 @@
+Contact Analysis Statistics
+=========================
+
+Top 10 Type1-Type2 Contact Pairs (Highest Counts):
+------------------------------------------------
+Indices (583, 583) - Contacts: 220
+Indices (625, 625) - Contacts: 220
+Indices (598, 598) - Contacts: 220
+Indices (610, 610) - Contacts: 220
+Indices (582, 582) - Contacts: 220
+Indices (633, 633) - Contacts: 220
+Indices (624, 624) - Contacts: 220
+Indices (611, 611) - Contacts: 220
+Indices (597, 597) - Contacts: 220
+Indices (581, 581) - Contacts: 220
+
+Bottom 10 Type1-Type2 Contact Pairs (Non-Zero):
+-----------------------------------------------
+Indices (641, 606) - Contacts: 1
+Indices (646, 620) - Contacts: 1
+Indices (576, 585) - Contacts: 1
+Indices (647, 619) - Contacts: 1
+Indices (645, 588) - Contacts: 1
+Indices (646, 643) - Contacts: 1
+Indices (646, 590) - Contacts: 1
+Indices (579, 631) - Contacts: 1
+Indices (647, 600) - Contacts: 1
+Indices (626, 619) - Contacts: 1
+
+Top 10 Type1 Indices by Total Contacts:
+--------------------------------------
+Index 590 - Total Contacts: 650
+Index 628 - Total Contacts: 645
+Index 636 - Total Contacts: 639
+Index 589 - Total Contacts: 637
+Index 620 - Total Contacts: 635
+Index 576 - Total Contacts: 635
+Index 604 - Total Contacts: 629
+Index 596 - Total Contacts: 628
+Index 622 - Total Contacts: 628
+Index 606 - Total Contacts: 628
+
+Top 10 Type2 Indices by Total Contacts:
+--------------------------------------
+Index 590 - Total Contacts: 650
+Index 628 - Total Contacts: 645
+Index 636 - Total Contacts: 639
+Index 589 - Total Contacts: 637
+Index 620 - Total Contacts: 635
+Index 576 - Total Contacts: 635
+Index 604 - Total Contacts: 629
+Index 606 - Total Contacts: 628
+Index 596 - Total Contacts: 628
+Index 622 - Total Contacts: 628
+
+Bottom 10 Type1 Indices by Total Contacts (Non-Zero):
+--------------------------------------------------
+Index 627 - Total Contacts: 519
+Index 642 - Total Contacts: 533
+Index 639 - Total Contacts: 533
+Index 599 - Total Contacts: 540
+Index 579 - Total Contacts: 541
+Index 609 - Total Contacts: 548
+Index 647 - Total Contacts: 548
+Index 586 - Total Contacts: 551
+Index 619 - Total Contacts: 551
+Index 634 - Total Contacts: 557
+
+Bottom 10 Type2 Indices by Total Contacts (Non-Zero):
+--------------------------------------------------
+Index 627 - Total Contacts: 519
+Index 639 - Total Contacts: 533
+Index 642 - Total Contacts: 533
+Index 599 - Total Contacts: 540
+Index 579 - Total Contacts: 541
+Index 609 - Total Contacts: 548
+Index 647 - Total Contacts: 548
+Index 586 - Total Contacts: 551
+Index 619 - Total Contacts: 551
+Index 631 - Total Contacts: 557

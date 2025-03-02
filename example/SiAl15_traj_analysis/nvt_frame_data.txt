@@ -1,0 +1,343 @@
+DBSCAN Clustering Analysis - Per-Frame Results
+==========================================
+
+Parameters:
+  Trajectory: ../../../../BATH/System_Analysis_01ns/system_analysis/SiAl15/nvt.traj
+  Threshold (eps): 3.0
+  Min Samples: 3
+  Frame Skip: 1000
+
+Frame 0:
+  Number of Clusters: 4
+  Number of Outliers: 9
+  Silhouette Score: 0.2822
+  Average Cluster Size: 15.75
+  Detailed Cluster Information:
+    Cluster 0: 34 points
+    Cluster 1: 11 points
+    Cluster 2: 15 points
+    Cluster 3: 3 points
+
+Frame 1000:
+  Number of Clusters: 9
+  Number of Outliers: 7
+  Silhouette Score: 0.2192
+  Average Cluster Size: 7.22
+  Detailed Cluster Information:
+    Cluster 0: 18 points
+    Cluster 1: 5 points
+    Cluster 2: 15 points
+    Cluster 3: 5 points
+    Cluster 4: 5 points
+    Cluster 5: 7 points
+    Cluster 6: 3 points
+    Cluster 7: 4 points
+    Cluster 8: 3 points
+
+Frame 2000:
+  Number of Clusters: 8
+  Number of Outliers: 5
+  Silhouette Score: 0.2366
+  Average Cluster Size: 8.38
+  Detailed Cluster Information:
+    Cluster 0: 11 points
+    Cluster 1: 10 points
+    Cluster 2: 12 points
+    Cluster 3: 7 points
+    Cluster 4: 9 points
+    Cluster 5: 4 points
+    Cluster 6: 4 points
+    Cluster 7: 10 points
+
+Frame 3000:
+  Number of Clusters: 7
+  Number of Outliers: 4
+  Silhouette Score: 0.3998
+  Average Cluster Size: 9.71
+  Detailed Cluster Information:
+    Cluster 0: 24 points
+    Cluster 1: 4 points
+    Cluster 2: 7 points
+    Cluster 3: 10 points
+    Cluster 4: 13 points
+    Cluster 5: 5 points
+    Cluster 6: 5 points
+
+Frame 4000:
+  Number of Clusters: 11
+  Number of Outliers: 12
+  Silhouette Score: 0.2575
+  Average Cluster Size: 5.45
+  Detailed Cluster Information:
+    Cluster 0: 4 points
+    Cluster 1: 12 points
+    Cluster 2: 8 points
+    Cluster 3: 4 points
+    Cluster 4: 7 points
+    Cluster 5: 5 points
+    Cluster 6: 4 points
+    Cluster 7: 4 points
+    Cluster 8: 4 points
+    Cluster 9: 5 points
+    Cluster 10: 3 points
+
+Frame 5000:
+  Number of Clusters: 9
+  Number of Outliers: 5
+  Silhouette Score: 0.3388
+  Average Cluster Size: 7.44
+  Detailed Cluster Information:
+    Cluster 0: 20 points
+    Cluster 1: 16 points
+    Cluster 2: 4 points
+    Cluster 3: 4 points
+    Cluster 4: 4 points
+    Cluster 5: 4 points
+    Cluster 6: 4 points
+    Cluster 7: 8 points
+    Cluster 8: 3 points
+
+Frame 6000:
+  Number of Clusters: 12
+  Number of Outliers: 8
+  Silhouette Score: 0.2714
+  Average Cluster Size: 5.33
+  Detailed Cluster Information:
+    Cluster 0: 14 points
+    Cluster 1: 3 points
+    Cluster 2: 7 points
+    Cluster 3: 5 points
+    Cluster 4: 4 points
+    Cluster 5: 8 points
+    Cluster 6: 3 points
+    Cluster 7: 4 points
+    Cluster 8: 7 points
+    Cluster 9: 3 points
+    Cluster 10: 3 points
+    Cluster 11: 3 points
+
+Frame 7000:
+  Number of Clusters: 8
+  Number of Outliers: 4
+  Silhouette Score: 0.3832
+  Average Cluster Size: 8.50
+  Detailed Cluster Information:
+    Cluster 0: 23 points
+    Cluster 1: 18 points
+    Cluster 2: 3 points
+    Cluster 3: 9 points
+    Cluster 4: 3 points
+    Cluster 5: 5 points
+    Cluster 6: 4 points
+    Cluster 7: 3 points
+
+Frame 8000:
+  Number of Clusters: 7
+  Number of Outliers: 7
+  Silhouette Score: 0.3910
+  Average Cluster Size: 9.29
+  Detailed Cluster Information:
+    Cluster 0: 17 points
+    Cluster 1: 17 points
+    Cluster 2: 6 points
+    Cluster 3: 10 points
+    Cluster 4: 9 points
+    Cluster 5: 3 points
+    Cluster 6: 3 points
+
+Frame 9000:
+  Number of Clusters: 10
+  Number of Outliers: 5
+  Silhouette Score: 0.2802
+  Average Cluster Size: 6.70
+  Detailed Cluster Information:
+    Cluster 0: 18 points
+    Cluster 1: 7 points
+    Cluster 2: 9 points
+    Cluster 3: 4 points
+    Cluster 4: 5 points
+    Cluster 5: 6 points
+    Cluster 6: 6 points
+    Cluster 7: 5 points
+    Cluster 8: 3 points
+    Cluster 9: 4 points
+
+Frame 10000:
+  Number of Clusters: 9
+  Number of Outliers: 4
+  Silhouette Score: 0.2760
+  Average Cluster Size: 7.56
+  Detailed Cluster Information:
+    Cluster 0: 9 points
+    Cluster 1: 13 points
+    Cluster 2: 5 points
+    Cluster 3: 10 points
+    Cluster 4: 12 points
+    Cluster 5: 5 points
+    Cluster 6: 3 points
+    Cluster 7: 6 points
+    Cluster 8: 5 points
+
+Frame 11000:
+  Number of Clusters: 8
+  Number of Outliers: 10
+  Silhouette Score: 0.3278
+  Average Cluster Size: 7.75
+  Detailed Cluster Information:
+    Cluster 0: 13 points
+    Cluster 1: 8 points
+    Cluster 2: 5 points
+    Cluster 3: 17 points
+    Cluster 4: 6 points
+    Cluster 5: 4 points
+    Cluster 6: 5 points
+    Cluster 7: 4 points
+
+Frame 12000:
+  Number of Clusters: 8
+  Number of Outliers: 5
+  Silhouette Score: 0.3458
+  Average Cluster Size: 8.38
+  Detailed Cluster Information:
+    Cluster 0: 17 points
+    Cluster 1: 19 points
+    Cluster 2: 11 points
+    Cluster 3: 5 points
+    Cluster 4: 4 points
+    Cluster 5: 4 points
+    Cluster 6: 4 points
+    Cluster 7: 3 points
+
+Frame 13000:
+  Number of Clusters: 8
+  Number of Outliers: 8
+  Silhouette Score: 0.3595
+  Average Cluster Size: 8.00
+  Detailed Cluster Information:
+    Cluster 0: 15 points
+    Cluster 1: 18 points
+    Cluster 2: 9 points
+    Cluster 3: 8 points
+    Cluster 4: 3 points
+    Cluster 5: 5 points
+    Cluster 6: 3 points
+    Cluster 7: 3 points
+
+Frame 14000:
+  Number of Clusters: 6
+  Number of Outliers: 3
+  Silhouette Score: 0.3957
+  Average Cluster Size: 11.50
+  Detailed Cluster Information:
+    Cluster 0: 22 points
+    Cluster 1: 16 points
+    Cluster 2: 15 points
+    Cluster 3: 10 points
+    Cluster 4: 3 points
+    Cluster 5: 3 points
+
+Frame 15000:
+  Number of Clusters: 9
+  Number of Outliers: 4
+  Silhouette Score: 0.3018
+  Average Cluster Size: 7.56
+  Detailed Cluster Information:
+    Cluster 0: 21 points
+    Cluster 1: 5 points
+    Cluster 2: 12 points
+    Cluster 3: 4 points
+    Cluster 4: 6 points
+    Cluster 5: 4 points
+    Cluster 6: 7 points
+    Cluster 7: 5 points
+    Cluster 8: 4 points
+
+Frame 16000:
+  Number of Clusters: 9
+  Number of Outliers: 6
+  Silhouette Score: 0.3002
+  Average Cluster Size: 7.33
+  Detailed Cluster Information:
+    Cluster 0: 17 points
+    Cluster 1: 4 points
+    Cluster 2: 16 points
+    Cluster 3: 6 points
+    Cluster 4: 4 points
+    Cluster 5: 4 points
+    Cluster 6: 4 points
+    Cluster 7: 5 points
+    Cluster 8: 6 points
+
+Frame 17000:
+  Number of Clusters: 8
+  Number of Outliers: 3
+  Silhouette Score: 0.3444
+  Average Cluster Size: 8.62
+  Detailed Cluster Information:
+    Cluster 0: 20 points
+    Cluster 1: 5 points
+    Cluster 2: 11 points
+    Cluster 3: 10 points
+    Cluster 4: 5 points
+    Cluster 5: 8 points
+    Cluster 6: 5 points
+    Cluster 7: 5 points
+
+Frame 18000:
+  Number of Clusters: 6
+  Number of Outliers: 3
+  Silhouette Score: 0.3824
+  Average Cluster Size: 11.50
+  Detailed Cluster Information:
+    Cluster 0: 22 points
+    Cluster 1: 5 points
+    Cluster 2: 12 points
+    Cluster 3: 15 points
+    Cluster 4: 11 points
+    Cluster 5: 4 points
+
+Frame 19000:
+  Number of Clusters: 8
+  Number of Outliers: 5
+  Silhouette Score: 0.3393
+  Average Cluster Size: 8.38
+  Detailed Cluster Information:
+    Cluster 0: 5 points
+    Cluster 1: 7 points
+    Cluster 2: 24 points
+    Cluster 3: 6 points
+    Cluster 4: 8 points
+    Cluster 5: 8 points
+    Cluster 6: 4 points
+    Cluster 7: 5 points
+
+Frame 20000:
+  Number of Clusters: 9
+  Number of Outliers: 8
+  Silhouette Score: 0.3290
+  Average Cluster Size: 7.11
+  Detailed Cluster Information:
+    Cluster 0: 4 points
+    Cluster 1: 16 points
+    Cluster 2: 10 points
+    Cluster 3: 11 points
+    Cluster 4: 4 points
+    Cluster 5: 7 points
+    Cluster 6: 5 points
+    Cluster 7: 4 points
+    Cluster 8: 3 points
+
+Frame 21000:
+  Number of Clusters: 7
+  Number of Outliers: 4
+  Silhouette Score: 0.3459
+  Average Cluster Size: 9.71
+  Detailed Cluster Information:
+    Cluster 0: 20 points
+    Cluster 1: 6 points
+    Cluster 2: 11 points
+    Cluster 3: 10 points
+    Cluster 4: 12 points
+    Cluster 5: 4 points
+    Cluster 6: 5 points
+

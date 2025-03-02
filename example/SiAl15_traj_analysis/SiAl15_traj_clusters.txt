@@ -1,0 +1,142 @@
+DBSCAN Clustering Analysis Summary
+================================
+
+Average Values Across All Frames:
+  Average Number of Clusters: 8.18
+  Average Number of Outliers: 5.86
+  Average Silhouette Score: 0.3231
+  Average Cluster Size: 8.51
+
+Analysis Results by Frame:
+Frame 0:
+  Number of Clusters: 4
+  Number of Outliers: 9
+  Silhouette Score: 0.2822
+  Average Cluster Size: 15.75
+
+Frame 1000:
+  Number of Clusters: 9
+  Number of Outliers: 7
+  Silhouette Score: 0.2192
+  Average Cluster Size: 7.22
+
+Frame 2000:
+  Number of Clusters: 8
+  Number of Outliers: 5
+  Silhouette Score: 0.2366
+  Average Cluster Size: 8.38
+
+Frame 3000:
+  Number of Clusters: 7
+  Number of Outliers: 4
+  Silhouette Score: 0.3998
+  Average Cluster Size: 9.71
+
+Frame 4000:
+  Number of Clusters: 11
+  Number of Outliers: 12
+  Silhouette Score: 0.2575
+  Average Cluster Size: 5.45
+
+Frame 5000:
+  Number of Clusters: 9
+  Number of Outliers: 5
+  Silhouette Score: 0.3388
+  Average Cluster Size: 7.44
+
+Frame 6000:
+  Number of Clusters: 12
+  Number of Outliers: 8
+  Silhouette Score: 0.2714
+  Average Cluster Size: 5.33
+
+Frame 7000:
+  Number of Clusters: 8
+  Number of Outliers: 4
+  Silhouette Score: 0.3832
+  Average Cluster Size: 8.50
+
+Frame 8000:
+  Number of Clusters: 7
+  Number of Outliers: 7
+  Silhouette Score: 0.3910
+  Average Cluster Size: 9.29
+
+Frame 9000:
+  Number of Clusters: 10
+  Number of Outliers: 5
+  Silhouette Score: 0.2802
+  Average Cluster Size: 6.70
+
+Frame 10000:
+  Number of Clusters: 9
+  Number of Outliers: 4
+  Silhouette Score: 0.2760
+  Average Cluster Size: 7.56
+
+Frame 11000:
+  Number of Clusters: 8
+  Number of Outliers: 10
+  Silhouette Score: 0.3278
+  Average Cluster Size: 7.75
+
+Frame 12000:
+  Number of Clusters: 8
+  Number of Outliers: 5
+  Silhouette Score: 0.3458
+  Average Cluster Size: 8.38
+
+Frame 13000:
+  Number of Clusters: 8
+  Number of Outliers: 8
+  Silhouette Score: 0.3595
+  Average Cluster Size: 8.00
+
+Frame 14000:
+  Number of Clusters: 6
+  Number of Outliers: 3
+  Silhouette Score: 0.3957
+  Average Cluster Size: 11.50
+
+Frame 15000:
+  Number of Clusters: 9
+  Number of Outliers: 4
+  Silhouette Score: 0.3018
+  Average Cluster Size: 7.56
+
+Frame 16000:
+  Number of Clusters: 9
+  Number of Outliers: 6
+  Silhouette Score: 0.3002
+  Average Cluster Size: 7.33
+
+Frame 17000:
+  Number of Clusters: 8
+  Number of Outliers: 3
+  Silhouette Score: 0.3444
+  Average Cluster Size: 8.62
+
+Frame 18000:
+  Number of Clusters: 6
+  Number of Outliers: 3
+  Silhouette Score: 0.3824
+  Average Cluster Size: 11.50
+
+Frame 19000:
+  Number of Clusters: 8
+  Number of Outliers: 5
+  Silhouette Score: 0.3393
+  Average Cluster Size: 8.38
+
+Frame 20000:
+  Number of Clusters: 9
+  Number of Outliers: 8
+  Silhouette Score: 0.3290
+  Average Cluster Size: 7.11
+
+Frame 21000:
+  Number of Clusters: 7
+  Number of Outliers: 4
+  Silhouette Score: 0.3459
+  Average Cluster Size: 9.71
+
