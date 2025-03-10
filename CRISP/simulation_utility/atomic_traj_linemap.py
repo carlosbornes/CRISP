@@ -1,27 +1,61 @@
-# CRISP/simulation_utility/atomic_traj_linemap.py
+"""
+CRISP/simulation_utility/atomic_traj_linemap.py
+
+This module provides functionality for visualizing atomic trajectories from molecular dynamics 
+simulations using interactive 3D plots.
+"""
 
 import os
 import numpy as np
-import argparse
 from typing import List, Optional, Dict
 from ase.io import read
 import plotly.graph_objects as go
 
-# Dictionary of covalent radii for common elements in Ångström
+# Dictionary of covalent radii for all elements in Ångström
 # Used to scale atom sizes appropriately in the visualization
 COVALENT_RADII = {
-    'H': 0.31, 'He': 0.28, 'Li': 1.28, 'Be': 0.96, 'B': 0.84, 'C': 0.76, 
-    'N': 0.71, 'O': 0.66, 'F': 0.57, 'Ne': 0.58, 'Na': 1.66, 'Mg': 1.41, 
-    'Al': 1.21, 'Si': 1.11, 'P': 1.07, 'S': 1.05, 'Cl': 1.02, 'Ar': 1.06, 
-    'K': 2.03, 'Ca': 1.76, 'Fe': 1.24, 'Ni': 1.21, 'Cu': 1.38, 'Zn': 1.31
+    # Period 1
+    'H': 0.31, 'He': 0.28, 
+    # Period 2
+    'Li': 1.28, 'Be': 0.96, 'B': 0.84, 'C': 0.76, 'N': 0.71, 'O': 0.66, 'F': 0.57, 'Ne': 0.58,
+    # Period 3 
+    'Na': 1.66, 'Mg': 1.41, 'Al': 1.21, 'Si': 1.11, 'P': 1.07, 'S': 1.05, 'Cl': 1.02, 'Ar': 1.06,
+    # Period 4
+    'K': 2.03, 'Ca': 1.76, 'Sc': 1.70, 'Ti': 1.60, 'V': 1.53, 'Cr': 1.39, 'Mn': 1.39, 
+    'Fe': 1.32, 'Co': 1.26, 'Ni': 1.24, 'Cu': 1.32, 'Zn': 1.22, 'Ga': 1.22, 'Ge': 1.20, 
+    'As': 1.19, 'Se': 1.20, 'Br': 1.20, 'Kr': 1.16,
+    # Period 5
+    'Rb': 2.20, 'Sr': 1.95, 'Y': 1.90, 'Zr': 1.75, 'Nb': 1.64, 'Mo': 1.54, 'Tc': 1.47, 
+    'Ru': 1.46, 'Rh': 1.42, 'Pd': 1.39, 'Ag': 1.45, 'Cd': 1.44, 'In': 1.42, 'Sn': 1.39, 
+    'Sb': 1.39, 'Te': 1.38, 'I': 1.39, 'Xe': 1.40,
+    # Period 6
+    'Cs': 2.44, 'Ba': 2.15, 'La': 2.07, 'Ce': 2.04, 'Pr': 2.03, 'Nd': 2.01, 'Pm': 1.99, 
+    'Sm': 1.98, 'Eu': 1.98, 'Gd': 1.96, 'Tb': 1.94, 'Dy': 1.92, 'Ho': 1.92, 'Er': 1.89, 
+    'Tm': 1.90, 'Yb': 1.87, 'Lu': 1.87, 'Hf': 1.75, 'Ta': 1.70, 'W': 1.62, 'Re': 1.51, 
+    'Os': 1.44, 'Ir': 1.41, 'Pt': 1.36, 'Au': 1.36, 'Hg': 1.32, 'Tl': 1.45, 'Pb': 1.46, 
+    'Bi': 1.48, 'Po': 1.40, 'At': 1.50, 'Rn': 1.50,
+    # Period 7
+    'Fr': 2.60, 'Ra': 2.21, 'Ac': 2.15, 'Th': 2.06, 'Pa': 2.00, 'U': 1.96, 'Np': 1.90, 
+    'Pu': 1.87, 'Am': 1.80, 'Cm': 1.69, 'Bk': 1.68, 'Cf': 1.68, 'Es': 1.65, 'Fm': 1.67, 
+    'Md': 1.73, 'No': 1.76, 'Lr': 1.61, 'Rf': 1.57, 'Db': 1.49, 'Sg': 1.43, 'Bh': 1.41, 
+    'Hs': 1.34, 'Mt': 1.29, 'Ds': 1.28, 'Rg': 1.21, 'Cn': 1.22, 'Nh': 1.36, 'Fl': 1.43, 
+    'Mc': 1.62, 'Lv': 1.75, 'Ts': 1.65, 'Og': 1.57
 }
 
 # Default color palette for atom types
 ELEMENT_COLORS = {
+    # Common elements
     'H': 'white', 'C': 'black', 'N': 'blue', 'O': 'red', 'F': 'green',
     'Na': 'purple', 'Mg': 'pink', 'Al': 'gray', 'Si': 'yellow', 'P': 'orange',
     'S': 'yellow', 'Cl': 'green', 'K': 'purple', 'Ca': 'gray', 'Fe': 'orange',
-    'Cu': 'orange', 'Zn': 'gray'
+    'Cu': 'orange', 'Zn': 'gray',
+    # Additional common elements with colors
+    'Br': 'brown', 'I': 'purple', 'Li': 'purple', 'B': 'olive',
+    'He': 'cyan', 'Ne': 'cyan', 'Ar': 'cyan', 'Kr': 'cyan', 'Xe': 'cyan',
+    'Mn': 'gray', 'Co': 'blue', 'Ni': 'green', 'Pd': 'gray', 'Pt': 'gray', 
+    'Au': 'gold', 'Hg': 'silver', 'Pb': 'darkgray', 'Ag': 'silver',
+    'Ti': 'gray', 'V': 'gray', 'Cr': 'gray', 'Zr': 'gray', 'Mo': 'gray', 
+    'W': 'gray', 'U': 'green'
 }
 
 def plot_atomic_trajectory(
@@ -38,7 +72,6 @@ def plot_atomic_trajectory(
     
     Parameters
     ----------
-
     traj_path : str
         Path to the ASE trajectory file
     selected_indices : List[int]
@@ -53,6 +86,11 @@ def plot_atomic_trajectory(
         Whether to display the plot (default: False)
     atom_size_scale : float, optional
         Scale factor for atom sizes (default: 1.0)
+        
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The generated plotly figure object
     """
     # Load trajectory
     print(f"Loading trajectory from {traj_path} (using every {frame_skip}th frame)...")
@@ -205,7 +243,11 @@ def plot_atomic_trajectory(
     )
     
     # Create output directory if needed
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs(os.path.dirname(output_path) or '.', exist_ok=True)
+    
+    # Ensure output path ends with .html
+    if not output_path.endswith('.html'):
+        output_path += '.html'
     
     # Save figure
     fig.write_html(output_path)
@@ -216,48 +258,3 @@ def plot_atomic_trajectory(
         fig.show()
     
     return fig
-
-def parse_indices(indices_str):
-    """Parse comma-separated indices."""
-    if not indices_str:
-        return []
-    
-    try:
-        return [int(idx.strip()) for idx in indices_str.split(',')]
-    except ValueError:
-        raise argparse.ArgumentTypeError("Indices must be comma-separated integers")
-
-def main():
-    """Parse command-line arguments and create the trajectory visualization."""
-    parser = argparse.ArgumentParser()
-    
-    # Required arguments
-    parser.add_argument("traj_path", type=str)
-    parser.add_argument("output_path", type=str)
-    
-    # Optional arguments
-    parser.add_argument("--selected-indices", type=parse_indices, default=[])
-    parser.add_argument("--frame-skip", type=int, default=100)
-    parser.add_argument("--plot-title", type=str, default=None)
-    parser.add_argument("--show-plot", action="store_true")
-    parser.add_argument("--atom-size-scale", type=float, default=1.0)
-    
-    args = parser.parse_args()
-    
-    # Ensure output path ends with .html
-    if not args.output_path.endswith('.html'):
-        args.output_path += '.html'
-    
-    # Create the plot
-    plot_atomic_trajectory(
-        args.traj_path,
-        args.selected_indices,
-        args.output_path,
-        args.frame_skip,
-        args.plot_title,
-        args.show_plot,
-        args.atom_size_scale
-    )
-
-if __name__ == "__main__":
-    main()

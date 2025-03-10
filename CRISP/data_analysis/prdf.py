@@ -1,13 +1,20 @@
+"""
+CRISP/data_analysis/prdf.py
+
+This script performs Radial Distribution Function analysis on molecular dynamics trajectory data.
+"""
+
+
 import os
 import numpy as np
 import pickle
 import math
-import argparse
 from ase.io import read
 from ase import Atoms
 from typing import Optional, Union, Tuple, List
 from joblib import Parallel, delayed
-
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 def check_cell_and_r_max(atoms: Atoms, rmax: float):
     """
@@ -22,21 +29,22 @@ def check_cell_and_r_max(atoms: Atoms, rmax: float):
         
     Raises
     ------
-    VolumeNotDefined
+    ValueError
         If cell is not defined or too small for requested rmax
     """
     if not atoms.cell.any():
-        raise VolumeNotDefined("The system's cell is not defined.")
+        raise ValueError("RDF Error: The system's cell is not defined.")
+    
     cell = atoms.cell
     try:
         lengths = cell.lengths()
         if np.min(lengths) < 2 * rmax:
-            raise VolumeNotDefined(f"Cell length {np.min(lengths)} is smaller than 2*rmax ({2*rmax}).")
+            raise ValueError(f"RDF Error: Cell length {np.min(lengths)} is smaller than 2*rmax ({2*rmax}).")
     except AttributeError:
         volume = cell.volume
         required_volume = (4/3) * math.pi * rmax**3
         if volume < required_volume:
-            raise VolumeNotDefined(f"Cell volume {volume} is too small for rmax {rmax} (required >= {required_volume}).")
+            raise ValueError(f"RDF Error: Cell volume {volume} is too small for rmax {rmax} (required >= {required_volume}).")
 
 def compute_pairwise_rdf(atoms: Atoms,
                          ref_indices: List[int],
@@ -179,6 +187,140 @@ class Analysis:
         ls_rdf = Parallel(n_jobs=-1)(delayed(process_image)(image) for image in images_to_process)
         return ls_rdf
 
+def plot_rdf(x_data_all, y_data_all, title=None, output_file=None):
+    """
+    Plot the average RDF with peak annotation.
+    
+    Parameters
+    ----------
+    x_data_all : np.ndarray
+        Distance values in Ångström
+    y_data_all : List[np.ndarray]
+        RDF values for each frame
+    title : str, optional
+        Custom title for the plot
+    output_file : str, optional
+        Path to save the plot (if None, just display)
+        
+    Returns
+    -------
+    None
+    """
+    # Calculate average RDF across all frames
+    y_data_avg = np.mean(y_data_all, axis=0)
+
+    # Find the index of the maximum y value in the average RDF
+    max_y_index = np.argmax(y_data_avg)
+    max_y_x = x_data_all[max_y_index]
+    max_y = y_data_avg[max_y_index]
+
+    # Create figure and set style
+    plt.figure(figsize=(10, 6))
+    
+    # Plot the average RDF
+    plt.plot(x_data_all, y_data_avg, linewidth=2, label='Average RDF')
+    
+    # Add a vertical dashed line for the maximum y value
+    plt.axvline(x=max_y_x, color='red', linestyle='--', label=f'Peak at {max_y_x:.2f} Å')
+    
+    # Annotate the peak
+    plt.annotate(f'g(r)={max_y:.2f}', 
+                 xy=(max_y_x, max_y),
+                 xytext=(max_y_x + 0.2, max_y),
+                 arrowprops=dict(facecolor='black', shrink=0.05, width=1.5))
+
+    # Add labels and title
+    plt.xlabel('Distance (Å)', fontsize=12)
+    plt.ylabel('g(r)', fontsize=12)
+    plt.title(title or 'Average Radial Distribution Function', fontsize=14)
+
+    # Add grid and legend
+    plt.grid(True, alpha=0.3)
+    plt.legend(fontsize=10)
+    
+    # Set reasonable y-axis limits
+    plt.ylim(bottom=0, top=max_y * 1.2)
+    
+    plt.tight_layout()
+    
+    # Save or show the plot
+    if output_file:
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+
+def animate_rdf(x_data_all, y_data_all, output_file=None):
+    """
+    Create an animated plot of the RDF across frames.
+    
+    Parameters
+    ----------
+    x_data_all : np.ndarray
+        Distance values in Ångström
+    y_data_all : List[np.ndarray]
+        RDF values for each frame
+    output_file : str, optional
+        Path to save the animation (if None, just display)
+        
+    Returns
+    -------
+    None
+    """
+    # Create a figure and axis
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Set x and y axis labels
+    plt.xlabel('Distance (Å)', fontsize=12)
+    plt.ylabel('g(r)', fontsize=12)
+    
+    # Find max value for consistent y scaling
+    max_y = max([np.max(y) for y in y_data_all]) * 1.1
+    
+    def update(frame):
+        ax.clear()  # Clear the previous frame
+        y = y_data_all[frame]
+        ax.plot(x_data_all, y, linewidth=2)
+        
+        # Find the index of the maximum y value
+        max_y_index = np.argmax(y)
+        max_y_x = x_data_all[max_y_index]
+        max_y_val = y[max_y_index]
+
+        # Add a line for the maximum y value
+        ax.axvline(x=max_y_x, color='red', linestyle='--')
+        
+        # Add text annotation for peak
+        ax.annotate(f'Peak: {max_y_x:.2f} Å', 
+                    xy=(max_y_x, max_y_val),
+                    xytext=(max_y_x + 0.1, max_y_val * 0.9),
+                    arrowprops=dict(facecolor='black', shrink=0.05))
+
+        # Add grid lines
+        ax.grid(True, alpha=0.3)
+        
+        # Set consistent y-axis limits
+        ax.set_ylim(0, max_y)
+
+        # Add title with frame information
+        ax.set_title(f'Radial Distribution Function - Frame {frame}', fontsize=14)
+        
+        return ax,
+
+    # Create the animation
+    ani = FuncAnimation(fig, update, frames=range(len(y_data_all)), 
+                       interval=200, blit=False)
+
+    # Save or display
+    if output_file:
+        ani.save(output_file, writer='pillow', fps=5)
+        plt.close()
+    else:
+        plt.tight_layout()
+        plt.show()
+    
+    return ani
+
 def analyze_rdf(use_prdf: bool,
                 rmax: float,
                 traj_path: str,
@@ -186,7 +328,8 @@ def analyze_rdf(use_prdf: bool,
                 frame_skip: int = 10,
                 output_filename: Optional[str] = None,
                 atomic_indices: Optional[Tuple[List[int], List[int]]] = None,
-                output_dir: str = 'custom_ase'):
+                output_dir: str = 'custom_ase',
+                plot_prdf: bool = False):
     """
     Analyze trajectory and calculate radial distribution functions.
     
@@ -208,11 +351,13 @@ def analyze_rdf(use_prdf: bool,
         Tuple of (reference_indices, target_indices) for partial RDF
     output_dir : str, optional
         Directory to save output files (default: 'custom_ase')
+    plot_prdf : bool, optional
+        Whether to create plots of the RDF data (default: False)
         
     Returns
     -------
-    None
-        Results are saved to file
+    dict
+        Dictionary containing x_data (bin centers) and y_data_all (RDF values for each frame)
         
     Raises
     ------
@@ -220,8 +365,12 @@ def analyze_rdf(use_prdf: bool,
         If no images found in trajectory or if atomic_indices is missing for PRDF
     """
     images = read(traj_path, index=f'::{frame_skip}')
+    if not isinstance(images, list):
+        images = [images]  # Convert to list if only one frame
+        
     if not images:
         raise ValueError("No images found in the trajectory.")
+        
     # Check cell validity for the first image
     check_cell_and_r_max(images[0], rmax)
     
@@ -237,86 +386,55 @@ def analyze_rdf(use_prdf: bool,
     x_data_all = ls_rdf[0][1]
     y_data_all = [rdf for rdf, _ in ls_rdf]
     
-    os.makedirs(output_dir, exist_ok=True)
-    output_filename = output_filename or ('prdf_custom_indices.pkl' if use_prdf else 'rdf_total.pkl')
-    output_filename = f'{output_filename}.pkl' if not output_filename.endswith('.pkl') else output_filename
-    output_file = os.path.join(output_dir, output_filename)
+    # Create output directory if needed
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     
-    with open(output_file, 'wb') as f:
-        pickle.dump({'x_data': x_data_all, 'y_data_all': y_data_all}, f)
+    # Generate base filename without extension
+    if not output_filename:
+        if use_prdf:
+            # Create descriptive name for PRDF
+            if atomic_indices:
+                ref_str = f"{len(atomic_indices[0])}-atoms"
+                target_str = f"{len(atomic_indices[1])}-atoms"
+                base_name = f"prdf_{ref_str}_{target_str}"
+            else:
+                base_name = "prdf_custom_indices"
+        else:
+            base_name = "rdf_total"
+    else:
+        # Remove extension if present
+        base_name = output_filename.rsplit('.', 1)[0] if '.' in output_filename else output_filename
     
-    print(f"Data saved in '{output_file}'")
-    return 
-
-def main():
-    """
-    Parse command-line arguments and run RDF analysis.
-    
-    Command-line Parameters
-    ----------------------
-    --traj-path : str
-        Path to trajectory file
-    --rmax : float
-        Maximum distance to consider for RDF
-    --nbins : int
-        Number of bins for the RDF histogram
-    --frame-skip : int
-        Use every n-th frame from trajectory
-    --output-dir : str
-        Directory to store output
-    --output-filename : str
-        Filename for output data
-    --total-rdf
-        Calculate total RDF (all atoms with all atoms)
-    --partial-rdf
-        Calculate partial RDF between specified atom groups
-    --ref-indices : str
-        Comma-separated list of reference atom indices for partial RDF
-    --target-indices : str
-        Comma-separated list of target atom indices for partial RDF
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--traj-path', type=str, required=True)
-    parser.add_argument('--rmax', type=float, required=True)
-    parser.add_argument('--nbins', type=int, default=100)
-    parser.add_argument('--frame-skip', type=int, default=10)
-    parser.add_argument('--output-dir', type=str, default='custom_ase')
-    parser.add_argument('--output-filename', type=str, default=None)
-    
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--total-rdf', action='store_true')
-    group.add_argument('--partial-rdf', action='store_true')
-    
-    parser.add_argument('--ref-indices', type=str, default=None)
-    parser.add_argument('--target-indices', type=str, default=None)
-    
-    args = parser.parse_args()
-    
-    # Process atomic indices if partial RDF
-    atomic_indices = None
-    if args.partial_rdf:
-        if not args.ref_indices or not args.target_indices:
-            parser.error("--ref-indices and --target-indices must be provided with --partial-rdf")
+    # Save data to pickle file
+    if output_dir:
+        pickle_file = os.path.join(output_dir, f"{base_name}.pkl")
+        with open(pickle_file, 'wb') as f:
+            pickle.dump({'x_data': x_data_all, 'y_data_all': y_data_all}, f)
         
-        try:
-            ref_indices = [int(i) for i in args.ref_indices.split(',')]
-            target_indices = [int(i) for i in args.target_indices.split(',')]
-            atomic_indices = (ref_indices, target_indices)
-        except ValueError:
-            parser.error("Indices must be comma-separated integers")
+        print(f"Data saved in '{pickle_file}'")
+        
+        # Create plots if requested
+        if plot_prdf:
+            # Determine plot titles and filenames
+            if use_prdf:
+                if atomic_indices:
+                    title = f"Partial RDF: {len(atomic_indices[0])} reference atoms, {len(atomic_indices[1])} target atoms"
+                else:
+                    title = "Partial RDF"
+            else:
+                title = "Total Radial Distribution Function"
+                
+            # Create and save static plot
+            static_plot_file = os.path.join(output_dir, f"{base_name}_plot.png")
+            plot_rdf(x_data_all, y_data_all, title=title, output_file=static_plot_file)
+            print(f"Static plot saved in '{static_plot_file}'")
+            
+            # Create and save animation if we have multiple frames
+            if len(y_data_all) > 1:
+                animation_file = os.path.join(output_dir, f"{base_name}_animation.gif")
+                animate_rdf(x_data_all, y_data_all, output_file=animation_file)
+                print(f"Animation saved in '{animation_file}'")
     
-    # Run the analysis
-    analyze_rdf(
-        use_prdf=args.partial_rdf,
-        rmax=args.rmax,
-        traj_path=args.traj_path,
-        nbins=args.nbins,
-        frame_skip=args.frame_skip,
-        output_filename=args.output_filename,
-        atomic_indices=atomic_indices,
-        output_dir=args.output_dir
-    )
-
-if __name__ == "__main__":
-    main()
-
+    # Return the results as a dictionary
+    return {'x_data': x_data_all, 'y_data_all': y_data_all}

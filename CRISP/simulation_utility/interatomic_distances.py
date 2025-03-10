@@ -1,9 +1,13 @@
-# CRISP/simulation_utility/interatomic_distances.py
+"""
+CRISP/simulation_utility/interatomic_distances.py
+
+This module provides tools to calculate and analyze interatomic distances from
+molecular dynamics trajectories.
+"""
 
 import os
 import numpy as np
 import pickle
-import argparse
 from ase.io import read
 from ase import Atoms
 from typing import Union, Tuple, List, Dict, Any
@@ -128,34 +132,55 @@ def save_distance_matrices(
     print(f"Distance matrices saved in '{output_path}'")
 
 
-def main():
-    """Parse command-line arguments and run distance calculations."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("traj_path", type=str)
+def calculate_interatomic_distances(
+    traj_path: str,
+    frame_skip: int = 10,
+    index_type: Union[str, List[Union[int, str]]] = "all",
+    output_dir: str = "distance_calculations",
+    save_results: bool = True
+) -> Dict[str, List[np.ndarray]]:
+    """
+    Calculate interatomic distances for a trajectory and optionally save results.
     
-    parser.add_argument(
-        "--frame_skip",
-        type=int,
-        default=10,
-    )
+    Parameters
+    ----------
+    traj_path : str
+        Path to the trajectory file
+    frame_skip : int, optional
+        Read every nth frame (default: 10)
+    index_type : str, list, or None, optional
+        Specification for which atoms to select (default: "all")
+    output_dir : str, optional
+        Directory to save output file (default: "distance_calculations")
+    save_results : bool, optional
+        Whether to save results to disk (default: True)
+        
+    Returns
+    -------
+    Dict[str, List[np.ndarray]]
+        Dictionary containing full distance matrices and optionally sub-matrices
+        
+    Examples
+    --------
+    >>> results = calculate_interatomic_distances("trajectory.traj")
+    >>> first_frame_distances = results["full_dms"][0]
+    >>> print(f"Distance matrix shape: {first_frame_distances.shape}")
+    """
+    print(f"Calculating interatomic distances from '{traj_path}'")
+    print(f"Using frame skip: {frame_skip}")
+    print(f"Index type: {index_type}")
     
-    parser.add_argument(
-        "--index_type",
-        type=str,
-        default=None
-    )
+    full_dms, sub_dms = distance_calculation(traj_path, frame_skip, index_type)
     
-    parser.add_argument(
-        "--output_dir", 
-        type=str,
-        default="distance_calculations"
-    )
-
-    args = parser.parse_args()
+    print(f"Processed {len(full_dms)} frames")
+    print(f"Full matrix shape: {full_dms[0].shape}")
+    print(f"Sub-matrix shape: {sub_dms[0].shape}")
     
-    full_dms, sub_dms = distance_calculation(args.traj_path, args.frame_skip, args.index_type) 
-    save_distance_matrices(full_dms, sub_dms, args.index_type, args.output_dir)
-
-
-if __name__ == "__main__":
-    main()
+    results = {"full_dms": full_dms}
+    if index_type not in ["all", None]:
+        results["sub_dms"] = sub_dms
+    
+    if save_results:
+        save_distance_matrices(full_dms, sub_dms, index_type, output_dir)
+    
+    return results

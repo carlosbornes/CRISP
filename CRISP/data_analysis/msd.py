@@ -1,4 +1,9 @@
-# CRISP/data_analysis/msd.py
+"""
+CRISP/data_analysis/msd.py
+
+This module performs mean square displacement (MSD) analysis on molecular dynamics 
+trajectory data for diffusion coefficient calculations.
+"""
 
 import ase.io
 import numpy as np
@@ -15,15 +20,22 @@ def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0):
     """
     Calculate Mean Square Displacement (MSD) vs time.
     
-    Parameters:
-        traj: Trajectory data
-        timestep: Simulation timestep
-        atom_indices: Indices of atoms to analyze (default: all atoms)
-        ignore_n_images: Number of initial images to ignore
+    Parameters
+    ----------
+    traj : list of ase.Atoms
+        Trajectory data
+    timestep : float
+        Simulation timestep
+    atom_indices : numpy.ndarray, optional
+        Indices of atoms to analyze (default: all atoms)
+    ignore_n_images : int, optional
+        Number of initial images to ignore (default: 0)
     
-    Returns:
-        msd_values: Mean square displacement values
-        msd_times: Corresponding time values in femtoseconds
+    Returns
+    -------
+    tuple
+        (msd_values, msd_times) where msd_values are Mean square displacement values
+        and msd_times are corresponding time values in femtoseconds
     """
     # Initialize parameters
     if atom_indices is None:
@@ -53,10 +65,18 @@ def save_msd_data(msd_times, msd_values, csv_file_path):
     """
     Save MSD data to a CSV file.
     
-    Parameters:
-        msd_times: Time values in femtoseconds
-        msd_values: Mean square displacement values
-        csv_file_path: Path to save the CSV file
+    Parameters
+    ----------
+    msd_times : numpy.ndarray
+        Time values in femtoseconds
+    msd_values : numpy.ndarray
+        Mean square displacement values
+    csv_file_path : str
+        Path to save the CSV file
+        
+    Returns
+    -------
+    None
     """
     with open(csv_file_path, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
@@ -71,17 +91,25 @@ def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end
     """
     Calculate diffusion coefficient from MSD data.
     
-    Parameters:
-        msd_times: Time values in femtoseconds
-        msd_values: Mean square displacement values
-        start_index: Starting index for the fit
-        end_index: Ending index for the fit
-        with_intercept: Whether to fit with intercept
-        plot: Whether to plot the fit
+    Parameters
+    ----------
+    msd_times : numpy.ndarray
+        Time values in femtoseconds
+    msd_values : numpy.ndarray
+        Mean square displacement values
+    start_index : int, optional
+        Starting index for the fit (default: 1/3 of data length)
+    end_index : int, optional
+        Ending index for the fit (default: end of data)
+    with_intercept : bool, optional
+        Whether to fit with intercept (default: False)
+    plot : bool, optional
+        Whether to plot the fit (default: False)
     
-    Returns:
-        D: Diffusion coefficient in cm²/s
-        error: Statistical error in the diffusion coefficient
+    Returns
+    -------
+    tuple
+        (D, error) where D is the diffusion coefficient in cm²/s and error is the statistical error
     """
     # Set default indices if not provided
     if start_index is None:
@@ -138,6 +166,7 @@ def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end
         plt.grid(True, alpha=0.3)
         plt.legend()
         plt.tight_layout()
+        plt.savefig('msd_analysis.png', dpi=300, bbox_inches='tight')
         plt.show()
     
     print(f'Diffusion Coefficient: {D:.2e} cm²/s')
@@ -150,17 +179,25 @@ def calculate_save_msd(traj_file, timestep_value, indices_file=None,
     """
     Calculate MSD data and save to CSV file.
     
-    Parameters:
-        traj_file: Path to the ASE trajectory file
-        timestep_value: Simulation timestep in ASE time units
-        indices_file: Path to file containing atom indices
-        ignore_n_images: Number of initial images to ignore
-        output_file: Output CSV file path
-        frame_skip: Number of frames to skip between samples
+    Parameters
+    ----------
+    traj_file : str
+        Path to the ASE trajectory file
+    timestep_value : float
+        Simulation timestep in ASE time units
+    indices_file : str, optional
+        Path to file containing atom indices (default: None)
+    ignore_n_images : int, optional
+        Number of initial images to ignore (default: 0)
+    output_file : str, optional
+        Output CSV file path (default: "msd_results.csv")
+    frame_skip : int, optional
+        Number of frames to skip between samples (default: 1)
     
-    Returns:
-        msd_values: Mean square displacement values
-        msd_times: Corresponding time values in femtoseconds
+    Returns
+    -------
+    tuple
+        (msd_values, msd_times) - MSD values and corresponding time values
     """
     # Load trajectory file
     try:
@@ -214,16 +251,23 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None,
     """
     Analyze MSD data from a CSV file.
     
-    Parameters:
-        csv_file: Path to the CSV file containing MSD data
-        fit_start: Start index for fitting
-        fit_end: End index for fitting
-        with_intercept: Whether to fit with intercept
-        plot: Whether to plot MSD vs time
+    Parameters
+    ----------
+    csv_file : str, optional
+        Path to the CSV file containing MSD data (default: "msd_results.csv")
+    fit_start : int, optional
+        Start index for fitting (default: None)
+    fit_end : int, optional
+        End index for fitting (default: None)
+    with_intercept : bool, optional
+        Whether to fit with intercept (default: False)
+    plot : bool, optional
+        Whether to plot MSD vs time (default: False)
     
-    Returns:
-        D: Diffusion coefficient
-        error: Statistical error
+    Returns
+    -------
+    tuple
+        (D, error) where D is the diffusion coefficient in cm²/s and error is the statistical error
     """
     try:
         # Load MSD data from CSV
@@ -249,6 +293,105 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None,
     except Exception as e:
         print(f"Error analyzing MSD data: {e}")
         return None, None
+
+def msd_analysis(traj_file, timestep_value, indices_file=None, ignore_n_images=0,
+                output_dir="msd_results", frame_skip=10, fit_start=None, fit_end=None,
+                with_intercept=False, plot=True):
+    """
+    Perform complete MSD analysis workflow: calculate MSD, save data, and analyze diffusion.
+    
+    Parameters
+    ----------
+    traj_file : str
+        Path to the ASE trajectory file
+    timestep_value : float
+        Simulation timestep in ASE time units
+    indices_file : str, optional
+        Path to file containing atom indices (default: None)
+    ignore_n_images : int, optional
+        Number of initial images to ignore (default: 0)
+    output_dir : str, optional
+        Directory to save output files (default: "msd_results")
+    frame_skip : int, optional
+        Number of frames to skip between samples (default: 10)
+    fit_start : int, optional
+        Start index for fitting diffusion coefficient (default: None)
+    fit_end : int, optional
+        End index for fitting diffusion coefficient (default: None)
+    with_intercept : bool, optional
+        Whether to fit with intercept (default: False)
+    plot : bool, optional
+        Whether to plot results (default: True)
+        
+    Returns
+    -------
+    dict
+        Dictionary containing MSD values, times, diffusion coefficient and error
+    """
+    import os
+    
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Define output CSV path
+    csv_path = os.path.join(output_dir, "msd_data.csv")
+    
+    # Convert timestep to ASE units if needed
+    if timestep_value < 1:  # Assuming user provided in fs
+        timestep = timestep_value * fs
+    else:
+        timestep = timestep_value
+    
+    # Calculate and save MSD data
+    msd_values, msd_times = calculate_save_msd(
+        traj_file=traj_file,
+        timestep_value=timestep,
+        indices_file=indices_file,
+        ignore_n_images=ignore_n_images,
+        output_file=csv_path,
+        frame_skip=frame_skip
+    )
+    
+    if msd_values is None or msd_times is None:
+        print("Failed to calculate MSD.")
+        return None
+    
+    # Calculate diffusion coefficient
+    D, error = calculate_diffusion_coefficient(
+        msd_times=msd_times,
+        msd_values=msd_values,
+        start_index=fit_start,
+        end_index=fit_end,
+        with_intercept=with_intercept,
+        plot=plot
+    )
+    
+    # Save summary to text file
+    summary_path = os.path.join(output_dir, "msd_summary.txt")
+    with open(summary_path, 'w') as f:
+        f.write("Mean Square Displacement (MSD) Analysis Summary\n")
+        f.write("=============================================\n\n")
+        f.write(f"Trajectory file: {traj_file}\n")
+        f.write(f"Timestep: {timestep/fs} fs\n")
+        f.write(f"Frame skip: {frame_skip}\n")
+        if indices_file:
+            f.write(f"Atom indices file: {indices_file}\n")
+        f.write(f"Number of frames analyzed: {len(msd_values)}\n\n")
+        f.write(f"Diffusion Coefficient: {D:.6e} cm²/s\n")
+        f.write(f"Statistical Error: {error:.6e} cm²/s\n")
+        if fit_start is not None and fit_end is not None:
+            f.write(f"Fit range: {fit_start} to {fit_end}\n")
+        f.write(f"Fit with intercept: {with_intercept}\n")
+    
+    print(f"Analysis summary saved to {summary_path}")
+    
+    # Return results as dictionary
+    return {
+        "msd_values": msd_values,
+        "msd_times": msd_times,
+        "diffusion_coefficient": D,
+        "error": error
+    }
 
 def main():
     """Main function to run the MSD analysis from command-line arguments."""

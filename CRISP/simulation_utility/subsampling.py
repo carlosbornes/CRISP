@@ -1,4 +1,9 @@
-# CRISP/simulation_utility/subsampling.py
+"""
+CRISP/simulation_utility/subsampling.py
+
+This module provides functionality for structure subsampling from molecular dynamics
+trajectories using Farthest Point Sampling (FPS) with SOAP descriptors.
+"""
 
 import numpy as np
 from ase.io import read, write
@@ -6,8 +11,8 @@ import fpsample
 import glob
 from dscribe.descriptors import SOAP
 import matplotlib.pyplot as plt
-import argparse
-import os
+from joblib import Parallel, delayed
+
 
 def indices(atoms, ind):
     """Extract atom indices from various input types.
@@ -45,118 +50,144 @@ def indices(atoms, ind):
 
     if any(isinstance(item, str) for item in ind):
         idx = []
+        if isinstance(ind, str):
+            ind = [ind]
         for i in ind:
             idx.append(np.where(np.array(atoms.get_chemical_symbols()) == i)[0])
         idx = np.concatenate(idx)
         return idx  # For chemical symbols - either "O", ["O", "H"] or ("O", "H")
 
-def create_repres(traj, ind="all"):
-    """Create SOAP representation vectors for trajectory frames.
+
+def compute_soap(structure, all_spec, rcut, idx):
+    """Compute SOAP descriptors for a given structure.
     
     Parameters
     ----------
-    traj : list
-        List of ASE Atoms objects (trajectory frames)
-    ind : str, list, or None, optional
-        Specification for which atoms to select for SOAP calculation (default: "all")
+    structure : ase.Atoms
+        Atomic structure for which to compute SOAP descriptors
+    all_spec : list
+        List of chemical elements to include in the descriptor
+    rcut : float
+        Cutoff radius for the SOAP descriptor in Angstroms
+    idx : numpy.ndarray
+        Indices of atoms to use as centers for SOAP calculation
         
     Returns
     -------
     numpy.ndarray
-        Array of SOAP feature vectors, one per frame
+        Average SOAP descriptor vector for the structure
+    """
+    periodic_cell = structure.cell.volume > 0
+    soap = SOAP(
+        species=all_spec,
+        periodic=periodic_cell,
+        r_cut=rcut,
+        n_max=8,
+        l_max=6,
+        sigma=0.5,
+        sparse=False
+    )
+    soap_ind = soap.create(structure, centers=idx)
+    return np.mean(soap_ind, axis=0)
+
+
+def create_repres(traj, rcut=6, ind="all", n_jobs=-1):
+    """Create SOAP representation vectors for a trajectory.
+    
+    Parameters
+    ----------
+    traj : list
+        List of ase.Atoms objects representing a trajectory
+    rcut : float, optional
+        Cutoff radius for the SOAP descriptor in Angstroms (default: 6)
+    ind : str, list, or None, optional
+        Specification for which atoms to use as SOAP centers (default: "all")
+    n_jobs : int, optional
+        Number of parallel jobs to run; -1 uses all available cores (default: -1)
+        
+    Returns
+    -------
+    numpy.ndarray
+        Array of SOAP descriptors for each frame in the trajectory
     """
     all_spec = traj[0].get_chemical_symbols()
     idx = indices(traj[0], ind=ind)
-    
-    repres = []
-    for index, structure in enumerate(traj):
-        periodic_cell = structure.cell.volume > 0
 
-        soap = SOAP(
-            species=all_spec,
-            periodic=periodic_cell,
-            r_cut=6,
-            n_max=8,
-            l_max=6,
-            sigma=0.5,
-            sparse=False
-        )
-
-        soap_ind = soap.create(traj[index], centers=idx)
-        repres.append(np.mean(soap_ind, axis=0))
+    repres = Parallel(n_jobs=n_jobs)(
+        delayed(compute_soap)(structure, all_spec, rcut, idx) for structure in traj
+    )
 
     return np.array(repres)
 
-def run_subsample(filename, output_dir, n_samples=50, index_type="all", file_format=None, skip=1):
-    """Perform FPS (Farthest Point Sampling) on a trajectory.
+
+def subsample(filename, n_samples=50, index_type="all", rcut=6.0, file_format=None, plot=False, skip=1):
+    """Subsample a trajectory using Farthest Point Sampling with SOAP descriptors.
     
     Parameters
     ----------
     filename : str
-        Path to trajectory file (can include wildcards)
-    output_dir : str
-        Directory to save output files
+        Path pattern to trajectory file(s); supports globbing
     n_samples : int, optional
-        Number of structures to subsample (default: 50)
+        Number of frames to select (default: 50)
     index_type : str, list, or None, optional
-        Atom indices to focus the subsampling on (default: "all")
+        Specification for which atoms to use for SOAP calculation (default: "all")
+    rcut : float, optional
+        Cutoff radius for SOAP in Angstroms (default: 6.0)
     file_format : str, optional
-        File format of the trajectories (default: None, auto-detect)
+        File format for ASE I/O (default: None, auto-detect)
+    plot : bool, optional
+        Whether to generate a plot of FPS distances (default: False)
     skip : int, optional
-        Read every n-th frame from trajectory (default: 1)
+        Read every nth frame from the trajectory (default: 1)
         
     Returns
     -------
     list
-        List of selected ASE Atoms objects (subsampled frames)
+        List of selected ase.Atoms frames
+        
+    Notes
+    -----
+    The selected frames are also written to a file named 'subsample_<original filename>'
     """
-    os.makedirs(output_dir, exist_ok=True)  # Ensure output directory exists
     filename = glob.glob(filename)
 
     trajec = []
     for file in filename:
         if file_format is not None:
-            trajec = read(file, index=f'::{skip}', format=file_format)
+            trajec += read(file, index=f'::{skip}', format=file_format)
         else:
-            trajec = read(file, index=f'::{skip}')
+            trajec += read(file, index=f'::{skip}')
 
     if not isinstance(trajec, list): 
         trajec = [trajec]
-
-    repres = create_repres(trajec, ind=index_type)
+    
+    repres = create_repres(trajec, ind=index_type, rcut=rcut)
     perm = fpsample.fps_sampling(repres, n_samples, start_idx=0)
 
-    # Create output trajectory file path
-    traj_output_file = os.path.join(output_dir, 'subsampled_trajectory.xyz')
-    
-    # Delete the file if it already exists to avoid appending to existing file
-    if os.path.exists(traj_output_file):
-        os.remove(traj_output_file)
-    
     fps_frames = []
+
     for str_idx, frame in enumerate(perm):
         new_frame = trajec[frame]
         fps_frames.append(new_frame)
-        
-        # Write to trajectory file, append=True after the first frame
-        write(traj_output_file, new_frame, append=(str_idx > 0))
-    
-    print(f"Successfully wrote {n_samples} frames to {traj_output_file}")
+
+    if plot:
+        distance = []
+        for i in range(1, len(perm)):
+            distance.append(np.min(np.linalg.norm(repres[perm[:i]] - repres[perm[i]], axis=1)))
+
+        plt.figure(figsize=(8, 6))
+        plt.plot(distance, c="blue", linewidth=2)
+        plt.ylim([0, 1.1 * max(distance)])
+        plt.xlabel("Number of subsampled structures")
+        plt.ylabel("Euclidean distance")
+        plt.title("FPS Subsampling")
+        plt.savefig("subsampled_convergence.png", dpi=300)
+        plt.close()
+
+    # Extract the base filename without path for output file
+    base_filename = filename[0].split('/')[-1] if '/' in filename[0] else filename[0].split('\\')[-1]
+    output_file = f"subsample_{base_filename}"
+    write(output_file, fps_frames, format=file_format)
+    print(f"Saved {len(fps_frames)} subsampled structures to {output_file}")
+
     return fps_frames
-
-def main():
-    """Parse command-line arguments and run subsampling."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename', type=str)
-    parser.add_argument('output_dir', type=str)
-    parser.add_argument('--n_samples', type=int, default=50)
-    parser.add_argument('--index_type', type=str, default='all')
-    parser.add_argument('--file_format', type=str, default=None)
-    parser.add_argument('--skip', type=int, default=1)
-    
-    args = parser.parse_args()
-
-    run_subsample(args.filename, args.output_dir, args.n_samples, args.index_type, args.file_format, args.skip)
-
-if __name__ == "__main__":
-    main()

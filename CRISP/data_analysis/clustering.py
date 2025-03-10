@@ -1,6 +1,10 @@
-# CRISP/data_analysis/clustering.py
+"""
+CRISP/data_analysis/clustering.py
 
-import argparse
+This module performs cluster analysis on molecular dynamics trajectory data,
+using DBSCAN algorithm to identify atom clusters and their properties.
+"""
+
 import numpy as np
 from ase.io import read
 from sklearn.cluster import DBSCAN
@@ -11,7 +15,26 @@ import csv
 import matplotlib.pyplot as plt
 import os
 
+
 class StructureAnalyzer:
+    """
+    Analyze atomic structures using DBSCAN clustering algorithm.
+    
+    Parameters
+    ----------
+    traj_file : str
+        Path to trajectory file
+    atom_indices : np.ndarray
+        Array containing indices of atoms to analyze
+    threshold : float
+        DBSCAN eps parameter (distance threshold)
+    min_samples : int
+        DBSCAN min_samples parameter
+    metric : str, optional
+        Distance metric to use (default: 'precomputed')
+    custom_frame_index : int, optional
+        Specific frame to analyze (default: None, uses last frame)
+    """
     def __init__(self, traj_file, atom_indices, threshold, min_samples, metric='precomputed', custom_frame_index=None):
         self.traj_file = traj_file
         self.atom_indices = atom_indices
@@ -23,7 +46,14 @@ class StructureAnalyzer:
         self.distance_matrix = None
         
     def read_custom_frame(self):
-        """Read a specific frame or the last frame from the trajectory."""
+        """
+        Read a specific frame or the last frame from the trajectory.
+        
+        Returns
+        -------
+        ase.Atoms or None
+            Atomic structure or None if reading fails
+        """
         try:
             if self.custom_frame_index is not None:
                 frame = read(self.traj_file, index=self.custom_frame_index)
@@ -35,7 +65,24 @@ class StructureAnalyzer:
             return None
             
     def calculate_distance_matrix(self, atoms):
-        """Calculate a distance matrix with periodic boundary conditions."""
+        """
+        Calculate a distance matrix with periodic boundary conditions.
+        
+        Parameters
+        ----------
+        atoms : ase.Atoms
+            Atomic structure
+            
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            Distance matrix and positions array
+            
+        Raises
+        ------
+        ValueError
+            If there are not enough atoms to form clusters
+        """
         positions = atoms.positions[self.atom_indices]
         
         if len(self.atom_indices) < self.min_samples:
@@ -52,7 +99,19 @@ class StructureAnalyzer:
         return self.distance_matrix, positions
         
     def find_clusters(self):
-        """Find clusters using DBSCAN."""
+        """
+        Find clusters using DBSCAN algorithm.
+        
+        Returns
+        -------
+        np.ndarray
+            Cluster labels for each input point
+            
+        Raises
+        ------
+        ValueError
+            If distance matrix has not been calculated
+        """
         if self.distance_matrix is None:
             raise ValueError("Distance matrix must be calculated first")
             
@@ -66,11 +125,20 @@ class StructureAnalyzer:
         return self.labels
 
     def analyze_structure(self, save_html_path=None, output_dir=None):
-        """Analyze the structure and find clusters.
+        """
+        Analyze the structure and find clusters.
         
-        Parameters:
-            save_html_path: Path to save HTML visualization (if None, auto-generated)
-            output_dir: Directory to save all results (overrides path in save_html_path)
+        Parameters
+        ----------
+        save_html_path : str, optional
+            Path to save HTML visualization
+        output_dir : str, optional
+            Directory to save all results
+            
+        Returns
+        -------
+        dict or None
+            Dictionary with analysis results or None if analysis fails
         """
         # Read the structure
         frame = self.read_custom_frame()
@@ -155,8 +223,26 @@ class StructureAnalyzer:
         
         return result_data
 
+
 def create_html_visualization(positions, labels, title, save_path):
-    """Create and save a 3D HTML visualization of clusters."""
+    """
+    Create and save a 3D HTML visualization of clusters.
+    
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of atom positions
+    labels : np.ndarray
+        Array of cluster labels
+    title : str
+        Title for the visualization
+    save_path : str
+        Path to save the HTML file
+        
+    Returns
+    -------
+    None
+    """
     fig = go.Figure()
     
     # Add traces for each cluster
@@ -195,8 +281,23 @@ def create_html_visualization(positions, labels, title, save_path):
     fig.write_html(save_path)
     print(f"3D visualization saved to {save_path}")
 
+
 def calculate_silhouette_score(distance_matrix, labels):
-    """Calculate silhouette score, handling edge cases."""
+    """
+    Calculate silhouette score, handling edge cases.
+    
+    Parameters
+    ----------
+    distance_matrix : np.ndarray
+        Distance matrix for points
+    labels : np.ndarray
+        Cluster labels
+        
+    Returns
+    -------
+    float
+        Silhouette score or 0 if calculation fails
+    """
     try:
         non_outlier_mask = labels != -1
         if np.sum(non_outlier_mask) > 1:
@@ -208,8 +309,23 @@ def calculate_silhouette_score(distance_matrix, labels):
     except ValueError:
         return 0
 
+
 def extract_cluster_info(labels, atom_indices):
-    """Extract cluster information from labels."""
+    """
+    Extract cluster information from labels.
+    
+    Parameters
+    ----------
+    labels : np.ndarray
+        Cluster labels
+    atom_indices : np.ndarray
+        Original atom indices
+        
+    Returns
+    -------
+    dict
+        Dictionary with cluster information
+    """
     cluster_indices = {}
     cluster_sizes = {}
     cluster_to_original = {}
@@ -234,8 +350,28 @@ def extract_cluster_info(labels, atom_indices):
         "cluster_to_original": cluster_to_original
     }
 
+
 def print_cluster_summary(num_clusters, outlier_count, silhouette_avg, avg_cluster_size, cluster_to_original):
-    """Print a summary of clustering results."""
+    """
+    Print a summary of clustering results.
+    
+    Parameters
+    ----------
+    num_clusters : int
+        Number of clusters found
+    outlier_count : int
+        Number of outliers
+    silhouette_avg : float
+        Average silhouette score
+    avg_cluster_size : float
+        Average cluster size
+    cluster_to_original : dict
+        Mapping from cluster IDs to original atom indices
+        
+    Returns
+    -------
+    None
+    """
     print(f"\nNumber of Clusters: {num_clusters}")
     print(f"Number of Outliers: {outlier_count}")
     print(f"Silhouette Score: {silhouette_avg:.4f}")
@@ -245,9 +381,39 @@ def print_cluster_summary(num_clusters, outlier_count, silhouette_avg, avg_clust
     for cluster_id, atoms in cluster_to_original.items():
         print(f"  Cluster {cluster_id}: {len(atoms)} points")
 
+
 def save_frame_info_to_file(file_path, threshold, min_samples, num_clusters, outlier_count, 
                            silhouette_avg, avg_cluster_size, cluster_to_original, labels, atom_indices):
-    """Save detailed frame information to a text file."""
+    """
+    Save detailed frame information to a text file.
+    
+    Parameters
+    ----------
+    file_path : str
+        Path to save the text file
+    threshold : float
+        DBSCAN eps parameter
+    min_samples : int
+        DBSCAN min_samples parameter
+    num_clusters : int
+        Number of clusters found
+    outlier_count : int
+        Number of outliers
+    silhouette_avg : float
+        Average silhouette score
+    avg_cluster_size : float
+        Average cluster size
+    cluster_to_original : dict
+        Mapping from cluster IDs to original atom indices
+    labels : np.ndarray
+        Cluster labels
+    atom_indices : np.ndarray
+        Original atom indices
+        
+    Returns
+    -------
+    None
+    """
     with open(file_path, 'w') as f:
         f.write(f"DBSCAN Clustering Analysis Results\n")
         f.write(f"================================\n\n")
@@ -273,9 +439,34 @@ def save_frame_info_to_file(file_path, threshold, min_samples, num_clusters, out
     
     print(f"Detailed frame data saved to: {file_path}")
 
+
 def analyze_trajectory(trajectory_path, atom_indices_path, threshold, min_samples, skip_frames=10,
-                      output_dir="contact_analysis", save_html_visualizations=True):
-    """Analyze an entire trajectory with DBSCAN clustering."""
+                      output_dir="clustering_results", save_html_visualizations=True):
+    """
+    Analyze an entire trajectory with DBSCAN clustering.
+    
+    Parameters
+    ----------
+    trajectory_path : str
+        Path to trajectory file
+    atom_indices_path : str
+        Path to numpy array file containing atom indices
+    threshold : float
+        DBSCAN eps parameter (distance threshold)
+    min_samples : int
+        DBSCAN min_samples parameter
+    skip_frames : int, optional
+        Number of frames to skip (default: 10)
+    output_dir : str, optional
+        Directory to save output files (default: "clustering_results")
+    save_html_visualizations : bool, optional
+        Whether to save HTML visualizations for first and last frames (default: True)
+        
+    Returns
+    -------
+    list
+        List of analysis results for each frame
+    """
     atom_indices = np.load(atom_indices_path)
     os.makedirs(output_dir, exist_ok=True)
     
@@ -395,8 +586,25 @@ def analyze_trajectory(trajectory_path, atom_indices_path, threshold, min_sample
     
     return results
 
-def save_analysis_results(analysis_results, output_dir="contact_analysis", output_prefix="clustering_results"):
-    """Save analysis results to CSV, TXT, and PKL files in the specified output directory."""
+
+def save_analysis_results(analysis_results, output_dir="clustering_results", output_prefix="clustering_results"):
+    """
+    Save analysis results to CSV, TXT, and PKL files in the specified output directory.
+    
+    Parameters
+    ----------
+    analysis_results : list
+        List of analysis results for each frame
+    output_dir : str, optional
+        Directory to save output files (default: "clustering_results")
+    output_prefix : str, optional
+        Prefix for output file names (default: "clustering_results")
+        
+    Returns
+    -------
+    str
+        Path to the saved pickle file
+    """
     os.makedirs(output_dir, exist_ok=True)
     
     output_csv_file = os.path.join(output_dir, f"{output_prefix}.csv")
@@ -455,8 +663,22 @@ def save_analysis_results(analysis_results, output_dir="contact_analysis", outpu
     
     return output_pickle_file
 
+
 def plot_analysis_results(pickle_file, output_dir=None):
-    """Plot analysis results from a pickle file and save to specified directory."""
+    """
+    Plot analysis results from a pickle file and save to specified directory.
+    
+    Parameters
+    ----------
+    pickle_file : str
+        Path to pickle file containing analysis results
+    output_dir : str, optional
+        Directory to save output files
+        
+    Returns
+    -------
+    None
+    """
     with open(pickle_file, 'rb') as f:
         analysis_results = pickle.load(f)
 
@@ -539,13 +761,39 @@ def plot_analysis_results(pickle_file, output_dir=None):
     
     print(f"Analysis plot saved to: {plot_file}")
 
-def main(args):
-    trajectory_path = args.trajectory_path
-    atom_indices_path = args.atom_indices_path
-    threshold = args.threshold
-    min_samples = args.min_samples
-    output_dir = args.output_dir
+
+def cluster_analysis(trajectory_path, atom_indices_path, threshold, min_samples=2, 
+                    mode='single', output_dir="clustering", custom_frame_index=None,
+                    skip_frames=10, output_prefix="clustering_results"):
+    """
+    Analyze molecular structures with DBSCAN clustering.
     
+    Parameters
+    ----------
+    trajectory_path : str
+        Path to trajectory file (ASE compatible format)
+    atom_indices_path : str
+        Path to numpy array file containing atom indices
+    threshold : float
+        DBSCAN clustering threshold (eps parameter)
+    min_samples : int, optional
+        Minimum number of samples in a cluster for DBSCAN (default: 2)
+    mode : str, optional
+        Analysis mode: 'single' for single frame, 'trajectory' for whole trajectory (default: 'single')
+    output_dir : str, optional
+        Directory to save output files (default: "clustering")
+    custom_frame_index : int, optional
+        Specific frame number to analyze in 'single' mode. If None, the last frame is analyzed
+    skip_frames : int, optional
+        Skip frames in trajectory analysis (default: 10)
+    output_prefix : str, optional
+        Prefix for output file names in trajectory analysis (default: "clustering_results")
+        
+    Returns
+    -------
+    dict or list
+        Analysis result (dict for single frame, list for trajectory)
+    """
     # Create base output directory
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output files will be saved to: {output_dir}")
@@ -553,7 +801,7 @@ def main(args):
     # Load atom indices
     atom_indices = np.load(atom_indices_path)
     
-    if args.mode == 'single':
+    if mode == 'single':
         # Create a mode-specific subdirectory
         mode_dir = os.path.join(output_dir, "single_frame")
         os.makedirs(mode_dir, exist_ok=True)
@@ -565,15 +813,12 @@ def main(args):
             threshold, 
             min_samples,
             metric='precomputed',
-            custom_frame_index=args.custom_frame_index
+            custom_frame_index=custom_frame_index
         )
-        
-        # Define HTML output path
-        base_traj_name = os.path.splitext(os.path.basename(trajectory_path))[0]
-        frame_index = args.custom_frame_index if args.custom_frame_index is not None else "last"
         
         # Run analysis with explicit output directory
         analysis_result = analyzer.analyze_structure(output_dir=mode_dir)
+        return analysis_result
         
     else:
         # Create a mode-specific subdirectory
@@ -581,9 +826,6 @@ def main(args):
         os.makedirs(mode_dir, exist_ok=True)
         
         # Analyze the entire trajectory
-        skip_frames = args.skip_frames
-        
-        # Perform trajectory analysis
         analysis_results = analyze_trajectory(
             trajectory_path, 
             atom_indices_path, 
@@ -598,66 +840,10 @@ def main(args):
         pickle_file = save_analysis_results(
             analysis_results, 
             output_dir=mode_dir, 
-            output_prefix=args.output_prefix
+            output_prefix=output_prefix
         )
         
         # Plot the analysis results
         plot_analysis_results(pickle_file, output_dir=mode_dir)
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Analyze molecular structures with DBSCAN clustering."
-    )
-    parser.add_argument(
-        "trajectory_path", 
-        type=str, 
-        help="Path to trajectory file (ASE compatible format)."
-    )
-    parser.add_argument(
-        "atom_indices_path", 
-        type=str, 
-        help="Path to numpy array file containing atom indices."
-    )
-    parser.add_argument(
-        "threshold", 
-        type=float, 
-        help="DBSCAN clustering threshold (eps parameter)."
-    )
-    parser.add_argument(
-        "--min_samples", 
-        type=int, 
-        default=2, 
-        help="Minimum number of samples in a cluster for DBSCAN. Default is 2."
-    )
-    parser.add_argument(
-        "--mode", 
-        type=str, 
-        choices=["single", "trajectory"], 
-        default="single", 
-        help="Analysis mode: 'single' for single frame, 'trajectory' for whole trajectory."
-    )
-    parser.add_argument(
-        "--output_dir", 
-        type=str, 
-        default="clustering", 
-        help="Directory to save output files. Default is 'clustering'."
-    )
-    parser.add_argument(
-        "--custom_frame_index", 
-        type=int, 
-        help="Specific frame number to analyze in 'single' mode. If not provided, the last frame will be analyzed."
-    )
-    parser.add_argument(
-        "--skip_frames", 
-        type=int, 
-        default=10, 
-        help="Skip frames in trajectory analysis. Default is 10."
-    )
-    parser.add_argument(
-        "--output_prefix", 
-        type=str, 
-        default="clustering_results", 
-        help="Prefix for output file names in trajectory analysis. Default is 'clustering_results'."
-    )
-    args = parser.parse_args()
-    main(args)
+        
+        return analysis_results

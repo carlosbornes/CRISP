@@ -1,10 +1,14 @@
-# CRISP/simulation_utility/atomic_indices.py
+"""
+CRISP/simulation_utility/atomic_indices.py
+
+This module provides utilities for extracting atomic indices from trajectory files
+and identifying atom pairs within specified cutoff distances.
+"""
 
 import os
 import numpy as np
 import ase.io
 import csv    
-import argparse
 
 
 def atom_indices(file_path, frame_index=0, cutoffs=None):
@@ -81,6 +85,27 @@ def run_atom_indices(file_path, output_folder, frame_index=0, cutoffs=None):
         - {symbol}_indices.npy: Numpy array of atom indices for each element
         - cutoff/{symbol1}-{symbol2}_cutoff.csv: CSV files with atom pairs within cutoff
     """
+    # Validate frame index
+    try:
+        traj_length = len(ase.io.read(file_path, index=":", format="traj"))
+        
+        # Check if frame_index is within valid range
+        if frame_index < 0 or frame_index >= traj_length:
+            raise ValueError(
+                f"Error: Frame index {frame_index} is out of range. "
+                f"Valid range is 0 to {traj_length-1}."
+            )
+            
+        print(f"Analyzing frame with index {frame_index} (out of {traj_length} frames)")
+        
+    except ValueError as e:
+        # Re-raise ValueError for frame index out of range
+        raise e
+        
+    except Exception as e:
+        # Handle other exceptions when reading the trajectory
+        raise ValueError(f"Error reading trajectory: {e}")
+    
     indices, dist_matrix, cutoff_indices = atom_indices(file_path, frame_index, cutoffs)
 
     if not os.path.exists(output_folder):
@@ -109,59 +134,3 @@ def run_atom_indices(file_path, output_folder, frame_index=0, cutoffs=None):
             writer.writerow([f"{symbol1} index", f"{symbol2} index", "distance"])
             writer.writerows(pair_indices_distances)
         print(f"Saved cutoff indices for {symbol1}-{symbol2} to {filepath}")
-        
-
-def main():
-    """Parse command-line arguments and run atom indices extraction."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("file_path", type=str)
-    parser.add_argument("output_folder", type=str)
-    parser.add_argument(
-        "--frame_index",
-        type=int,
-        default=0,
-    )
-    parser.add_argument(
-        "--cutoffs",
-        type=str,
-        default=None,
-    )
-
-    args = parser.parse_args()
-    
-    # Validate frame index
-    try:
-        traj_length = len(ase.io.read(args.file_path, index=":", format="traj"))
-        
-        # Check if frame_index is within valid range
-        if args.frame_index < 0 or args.frame_index >= traj_length:
-            raise ValueError(
-                f"Error: Frame index {args.frame_index} is out of range. "
-                f"Valid range is 0 to {traj_length-1}."
-            )
-            
-        frame_index = args.frame_index
-        print(f"Analyzing frame with index {frame_index} (out of {traj_length} frames)")
-        
-    except ValueError as e:
-        # Re-raise ValueError for frame index out of range
-        raise e
-        
-    except Exception as e:
-        # Handle other exceptions when reading the trajectory
-        raise ValueError(f"Error reading trajectory: {e}")
-
-    cutoffs = None
-    if args.cutoffs:
-        cutoffs = {}
-        pairs = args.cutoffs.split(",")
-        for pair in pairs:
-            symbols, cutoff = pair.split(":")
-            symbol1, symbol2 = symbols.split("-")
-            cutoffs[(symbol1, symbol2)] = float(cutoff)
-
-    run_atom_indices(args.file_path, args.output_folder, frame_index, cutoffs)
-
-
-if __name__ == "__main__":
-    main()
