@@ -61,7 +61,8 @@ To be updated
 
 # Current Modules
 
-To learn how to use each of the modules, please visit [examples](https://github.com/Indranil17/TEST/tree/main/example).
+To learn how to use each of the modules, please visit [examples]([https://github.com/Indranil17/TEST/tree/main/example](https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb
+)).
    - CRISP.atom_indices
    - CRISP.prdf
    - CRISP.msd_plot
