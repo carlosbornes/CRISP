@@ -9,12 +9,12 @@ import ase.io
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
-import argparse
 import sys
 from ase.units import fs
 from ase.units import fs as fs_conversion
 from scipy.optimize import curve_fit
 import pandas as pd
+import os
 
 def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0):
     """
@@ -87,7 +87,7 @@ def save_msd_data(msd_times, msd_values, csv_file_path):
     print(f"MSD data has been saved to {csv_file_path}")
 
 def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end_index=None, 
-                                   with_intercept=False, plot=False):
+                                   with_intercept=False, plot_msd=False):
     """
     Calculate diffusion coefficient from MSD data.
     
@@ -100,10 +100,10 @@ def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end
     start_index : int, optional
         Starting index for the fit (default: 1/3 of data length)
     end_index : int, optional
-        Ending index for the fit (default: end of data)
+        Ending index for the fit (default: None)
     with_intercept : bool, optional
         Whether to fit with intercept (default: False)
-    plot : bool, optional
+    plot_msd : bool, optional
         Whether to plot the fit (default: False)
     
     Returns
@@ -156,7 +156,7 @@ def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end
     error = std_err * 10**-5
     
     # Plot if requested
-    if plot:
+    if plot_msd:
         plt.figure(figsize=(10, 6))
         plt.scatter(msd_times, msd_values, s=10, alpha=0.5, label='MSD data')
         plt.plot(x_fit, fit_func(x_fit), 'r-', linewidth=2, label=label)
@@ -224,8 +224,7 @@ def calculate_save_msd(traj_file, timestep_value, indices_file=None,
             print(f"Error loading atom indices: {e}")
             return None, None
 
-    # Adjust timestep for frame skipping
-    timestep = timestep_value * frame_skip
+    timestep = timestep_value 
     print(f"Using adjusted timestep: {timestep/fs} * fs (original: {timestep_value/fs} * fs)")
 
     # Calculate MSD
@@ -247,7 +246,7 @@ def calculate_save_msd(traj_file, timestep_value, indices_file=None,
     return msd_values, msd_times
 
 def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None, 
-                    with_intercept=False, plot=False):
+                    with_intercept=False, plot_msd=False):
     """
     Analyze MSD data from a CSV file.
     
@@ -261,7 +260,7 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None,
         End index for fitting (default: None)
     with_intercept : bool, optional
         Whether to fit with intercept (default: False)
-    plot : bool, optional
+    plot_msd : bool, optional
         Whether to plot MSD vs time (default: False)
     
     Returns
@@ -285,7 +284,7 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None,
             start_index=fit_start, 
             end_index=fit_end, 
             with_intercept=with_intercept, 
-            plot=plot
+            plot_msd=plot_msd
         )
         
         return D, error
@@ -296,7 +295,7 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None,
 
 def msd_analysis(traj_file, timestep_value, indices_file=None, ignore_n_images=0,
                 output_dir="msd_results", frame_skip=10, fit_start=None, fit_end=None,
-                with_intercept=False, plot=True):
+                with_intercept=False, plot_msd=True):
     """
     Perform complete MSD analysis workflow: calculate MSD, save data, and analyze diffusion.
     
@@ -320,7 +319,7 @@ def msd_analysis(traj_file, timestep_value, indices_file=None, ignore_n_images=0
         End index for fitting diffusion coefficient (default: None)
     with_intercept : bool, optional
         Whether to fit with intercept (default: False)
-    plot : bool, optional
+    plot_msd : bool, optional
         Whether to plot results (default: True)
         
     Returns
@@ -328,8 +327,6 @@ def msd_analysis(traj_file, timestep_value, indices_file=None, ignore_n_images=0
     dict
         Dictionary containing MSD values, times, diffusion coefficient and error
     """
-    import os
-    
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -363,7 +360,7 @@ def msd_analysis(traj_file, timestep_value, indices_file=None, ignore_n_images=0
         start_index=fit_start,
         end_index=fit_end,
         with_intercept=with_intercept,
-        plot=plot
+        plot_msd=plot_msd
     )
     
     # Save summary to text file
@@ -392,120 +389,3 @@ def msd_analysis(traj_file, timestep_value, indices_file=None, ignore_n_images=0
         "diffusion_coefficient": D,
         "error": error
     }
-
-def main():
-    """Main function to run the MSD analysis from command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Calculate and analyze Mean Square Displacement (MSD) from trajectory data."
-    )
-    
-    subparsers = parser.add_subparsers(dest="command", help="Command to run")
-    
-    # Calculate command
-    calc_parser = subparsers.add_parser("calculate", help="Calculate and save MSD data")
-    
-    calc_parser.add_argument(
-        "trajectory", 
-        type=str, 
-        help="Path to the ASE trajectory file."
-    )
-    
-    calc_parser.add_argument(
-        "--timestep", 
-        type=float, 
-        required=True,
-        help="Simulation timestep in ASE time units (e.g., 0.5 * 100 * fs)"
-    )
-    
-    calc_parser.add_argument(
-        "--indices", 
-        type=str, 
-        help="Path to file containing atom indices (numpy array)",
-        default=None
-    )
-    
-    calc_parser.add_argument(
-        "--ignore_images", 
-        type=int, 
-        default=0, 
-        help="Number of initial images to ignore. Default is 0."
-    )
-    
-    calc_parser.add_argument(
-        "--output", 
-        type=str, 
-        default="msd_results.csv", 
-        help="Output CSV file path. Default is 'msd_results.csv'."
-    )
-    
-    calc_parser.add_argument(
-        "--frame_skip", 
-        type=int, 
-        default=10, 
-        help="Number of frames to skip between samples. Default is 10."
-    )
-    
-    # Analyze command
-    analyze_parser = subparsers.add_parser("analyze", help="Analyze saved MSD data")
-    
-    analyze_parser.add_argument(
-        "--input", 
-        type=str, 
-        default="msd_results.csv", 
-        help="Input CSV file path. Default is 'msd_results.csv'."
-    )
-    
-    analyze_parser.add_argument(
-        "--fit_start", 
-        type=int,
-        help="Start index for fitting"
-    )
-    
-    analyze_parser.add_argument(
-        "--fit_end", 
-        type=int, 
-        help="End index for fitting"
-    )
-    
-    analyze_parser.add_argument(
-        "--with_intercept", 
-        action="store_true", 
-        help="Fit with intercept"
-    )
-    
-    analyze_parser.add_argument(
-        "--plot", 
-        action="store_true", 
-        help="Plot MSD vs time"
-    )
-    
-    args = parser.parse_args()
-    
-    if args.command == "calculate":
-        # Convert timestep
-        timestep = args.timestep * fs
-        
-        calculate_save_msd(
-            traj_file=args.trajectory,
-            timestep_value=timestep,
-            indices_file=args.indices,
-            ignore_n_images=args.ignore_images,
-            output_file=args.output,
-            frame_skip=args.frame_skip
-        )
-        
-    elif args.command == "analyze":
-        analyze_from_csv(
-            csv_file=args.input,
-            fit_start=args.fit_start,
-            fit_end=args.fit_end,
-            with_intercept=args.with_intercept,
-            plot=args.plot
-        )
-        
-    else:
-        parser.print_help()
-
-
-if __name__ == "__main__":
-    main()

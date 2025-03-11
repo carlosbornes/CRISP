@@ -189,7 +189,7 @@ class Analysis:
 
 def plot_rdf(x_data_all, y_data_all, title=None, output_file=None):
     """
-    Plot the average RDF with peak annotation.
+    Plot the average RDF with peak location marked by vertical line.
     
     Parameters
     ----------
@@ -220,15 +220,9 @@ def plot_rdf(x_data_all, y_data_all, title=None, output_file=None):
     # Plot the average RDF
     plt.plot(x_data_all, y_data_avg, linewidth=2, label='Average RDF')
     
-    # Add a vertical dashed line for the maximum y value
+    # Add a vertical dashed line for the maximum y value (keep this)
     plt.axvline(x=max_y_x, color='red', linestyle='--', label=f'Peak at {max_y_x:.2f} Å')
     
-    # Annotate the peak
-    plt.annotate(f'g(r)={max_y:.2f}', 
-                 xy=(max_y_x, max_y),
-                 xytext=(max_y_x + 0.2, max_y),
-                 arrowprops=dict(facecolor='black', shrink=0.05, width=1.5))
-
     # Add labels and title
     plt.xlabel('Distance (Å)', fontsize=12)
     plt.ylabel('g(r)', fontsize=12)
@@ -243,16 +237,18 @@ def plot_rdf(x_data_all, y_data_all, title=None, output_file=None):
     
     plt.tight_layout()
     
-    # Save or show the plot
+    # Save and/or show the plot
     if output_file:
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.show()  # Added to display plot in addition to saving it
         plt.close()
     else:
         plt.show()
 
+
 def animate_rdf(x_data_all, y_data_all, output_file=None):
     """
-    Create an animated plot of the RDF across frames.
+    Create an animated plot of the RDF across frames and save in interactive format.
     
     Parameters
     ----------
@@ -265,7 +261,8 @@ def animate_rdf(x_data_all, y_data_all, output_file=None):
         
     Returns
     -------
-    None
+    Animation
+        Matplotlib animation object
     """
     # Create a figure and axis
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -285,16 +282,12 @@ def animate_rdf(x_data_all, y_data_all, output_file=None):
         # Find the index of the maximum y value
         max_y_index = np.argmax(y)
         max_y_x = x_data_all[max_y_index]
-        max_y_val = y[max_y_index]
-
-        # Add a line for the maximum y value
-        ax.axvline(x=max_y_x, color='red', linestyle='--')
         
-        # Add text annotation for peak
-        ax.annotate(f'Peak: {max_y_x:.2f} Å', 
-                    xy=(max_y_x, max_y_val),
-                    xytext=(max_y_x + 0.1, max_y_val * 0.9),
-                    arrowprops=dict(facecolor='black', shrink=0.05))
+        # Add a line for the maximum y value (keep this)
+        ax.axvline(x=max_y_x, color='red', linestyle='--', label=f'Peak at {max_y_x:.2f} Å')
+        
+        # Add legend
+        ax.legend(fontsize=10)
 
         # Add grid lines
         ax.grid(True, alpha=0.3)
@@ -313,11 +306,24 @@ def animate_rdf(x_data_all, y_data_all, output_file=None):
 
     # Save or display
     if output_file:
-        ani.save(output_file, writer='pillow', fps=5)
+        # Save interactive HTML version
+        html_file = os.path.splitext(output_file)[0] + ".html"
+        html_code = ani.to_jshtml()
+        with open(html_file, 'w') as f:
+            f.write(html_code)
+        print(f"Interactive animation saved to '{html_file}'")
+        
+        # Also save traditional GIF version
+        try:
+            ani.save(output_file, writer='pillow', fps=5)
+            print(f"GIF animation saved to '{output_file}'")
+        except Exception as e:
+            print(f"Warning: Could not save GIF animation: {e}")
+        
+        plt.tight_layout()  # Added to display animation in addition to saving it
         plt.close()
     else:
         plt.tight_layout()
-        plt.show()
     
     return ani
 

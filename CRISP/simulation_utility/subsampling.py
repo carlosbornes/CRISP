@@ -9,6 +9,7 @@ import numpy as np
 from ase.io import read, write
 import fpsample
 import glob
+import os
 from dscribe.descriptors import SOAP
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
@@ -120,7 +121,8 @@ def create_repres(traj, rcut=6, ind="all", n_jobs=-1):
     return np.array(repres)
 
 
-def subsample(filename, n_samples=50, index_type="all", rcut=6.0, file_format=None, plot=False, skip=1):
+def subsample(filename, n_samples=50, index_type="all", rcut=6.0, file_format=None, 
+             plot_subsample=False, skip=1, output_dir="subsampled_structures"):
     """Subsample a trajectory using Farthest Point Sampling with SOAP descriptors.
     
     Parameters
@@ -135,10 +137,12 @@ def subsample(filename, n_samples=50, index_type="all", rcut=6.0, file_format=No
         Cutoff radius for SOAP in Angstroms (default: 6.0)
     file_format : str, optional
         File format for ASE I/O (default: None, auto-detect)
-    plot : bool, optional
+    plot_subsample : bool, optional
         Whether to generate a plot of FPS distances (default: False)
     skip : int, optional
         Read every nth frame from the trajectory (default: 1)
+    output_dir : str, optional
+        Directory to save the subsampled structures (default: "subsampled_structures")
         
     Returns
     -------
@@ -147,7 +151,7 @@ def subsample(filename, n_samples=50, index_type="all", rcut=6.0, file_format=No
         
     Notes
     -----
-    The selected frames are also written to a file named 'subsample_<original filename>'
+    The selected frames and plots are saved in the specified output directory
     """
     filename = glob.glob(filename)
 
@@ -170,7 +174,11 @@ def subsample(filename, n_samples=50, index_type="all", rcut=6.0, file_format=No
         new_frame = trajec[frame]
         fps_frames.append(new_frame)
 
-    if plot:
+    # Create output directory if it doesn't exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    if plot_subsample:
         distance = []
         for i in range(1, len(perm)):
             distance.append(np.min(np.linalg.norm(repres[perm[:i]] - repres[perm[i]], axis=1)))
@@ -181,12 +189,15 @@ def subsample(filename, n_samples=50, index_type="all", rcut=6.0, file_format=No
         plt.xlabel("Number of subsampled structures")
         plt.ylabel("Euclidean distance")
         plt.title("FPS Subsampling")
-        plt.savefig("subsampled_convergence.png", dpi=300)
+        # Save plot in the output directory
+        plt.savefig(os.path.join(output_dir, "subsampled_convergence.png"), dpi=300)
+        plt.show()
         plt.close()
+        print(f"Saved convergence plot to {os.path.join(output_dir, 'subsampled_convergence.png')}")
 
     # Extract the base filename without path for output file
     base_filename = filename[0].split('/')[-1] if '/' in filename[0] else filename[0].split('\\')[-1]
-    output_file = f"subsample_{base_filename}"
+    output_file = os.path.join(output_dir, f"subsample_{base_filename}")
     write(output_file, fps_frames, format=file_format)
     print(f"Saved {len(fps_frames)} subsampled structures to {output_file}")
 

@@ -6,7 +6,7 @@ including coordination number calculation and atomic contact analysis.
 """
 
 from ase.io import read
-import numpy np
+import numpy as np
 from joblib import Parallel, delayed
 import pickle
 from typing import Union, List, Dict, Tuple, Optional, Any
@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import itertools
 from ase.data import vdw_radii, atomic_numbers, chemical_symbols
 import seaborn as sns
+import plotly.graph_objects as go
+import plotly.io as pio
 
 
 def indices(atoms, ind: Union[str, List[Union[int, str]]]) -> np.ndarray:
@@ -84,7 +86,8 @@ def coordination_frame(atoms, target_atoms, ligand_atoms, custom_cutoffs=None, m
     dm = atoms.get_all_distances(mic=mic)
     np.fill_diagonal(dm, np.inf)
 
-    sub_dm = dm[indices_target, :][:, indices_ligand]
+    # FIX: Use np.ix_ for proper indexing of the distance matrix
+    sub_dm = dm[np.ix_(indices_target, indices_ligand)]
 
     target_atomic_numbers = np.array(atoms.get_atomic_numbers())[indices_target]
     ligand_atomic_numbers = np.array(atoms.get_atomic_numbers())[indices_ligand]
@@ -111,7 +114,7 @@ def coordination_frame(atoms, target_atoms, ligand_atoms, custom_cutoffs=None, m
     return coordination_dict_frame
 
 
-def get_avg_percentages(coordination_data, atom_type, plot=False, output_dir="./"):
+def get_avg_percentages(coordination_data, atom_type, plot_cn=False, output_dir="./"):
     """
     Compute average percentages of each coordination number over all frames.
     
@@ -121,7 +124,7 @@ def get_avg_percentages(coordination_data, atom_type, plot=False, output_dir="./
         Dictionary mapping atom indices to lists of coordination numbers
     atom_type : Optional[str]
         Chemical symbol of target atoms or None
-    plot : bool, optional
+    plot_cn : bool, optional
         Boolean to indicate if a time series plot should be generated
     output_dir : str, optional
         Directory where output files will be saved
@@ -148,7 +151,7 @@ def get_avg_percentages(coordination_data, atom_type, plot=False, output_dir="./
     frames = list(range(len(next(iter(avg_percentages.values())))))
     coord_types = list(avg_percentages.keys())
 
-    if plot:
+    if plot_cn:
         colors = plt.get_cmap('tab10', len(coord_types)).colors
         markers = itertools.cycle(['o', 's', 'D', '^', 'v', 'p', '*', '+', 'x'])
         plt.figure(figsize=(10, 6))
@@ -169,12 +172,13 @@ def get_avg_percentages(coordination_data, atom_type, plot=False, output_dir="./
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "CN_time_series.png"), dpi=300, bbox_inches='tight')
+        plt.show()  # Added to display the plot
         plt.close()
 
     return avg_percentages
 
 
-def plot_coordination_distribution(avg_percentages, atom_type, plot, output_dir="./", output_file="CN_distribution"):
+def plot_coordination_distribution(avg_percentages, atom_type, plot_cn, output_dir="./", output_file="CN_distribution"):
     """
     Plot a pie chart showing the overall average distribution of coordination numbers.
     
@@ -184,7 +188,82 @@ def plot_coordination_distribution(avg_percentages, atom_type, plot, output_dir=
         Dictionary of average percentages per coordination number
     atom_type : Optional[str]
         Chemical symbol for target atoms
-    plot : bool
+    plot_cn : bool
+        Boolean to indicate if the plot should be generated
+    output_dir : str, optional
+        Directory where output files will be saved
+    output_file : str, optional
+        Filename for saving the plot
+        
+    Returns
+    -------
+    Dict[int, float]
+        Dictionary of overall average coordination percentages
+    """
+    # Call the Plotly version of the function for interactive visualization
+    # Also save a static PNG version using matplotlib for compatibility
+    overall_avg_percentages = plot_coordination_distribution_plotly(avg_percentages, atom_type, plot_cn, 
+                                                                   output_dir=output_dir, 
+                                                                   output_file=output_file)
+    
+    # Generate a static version for compatibility
+    if plot_cn:
+        overall_avg_percentages = {coord_type: sum(percentages) / len(percentages) 
+                                  for coord_type, percentages in avg_percentages.items()}
+        fig, ax = plt.subplots(figsize=(10, 7))
+        
+        # Sort by coordination number for consistent ordering
+        sorted_data = sorted(overall_avg_percentages.items())
+        coord_types = [item[0] for item in sorted_data]
+        percentages = [item[1] for item in sorted_data]
+        
+        # Generate colors from a colormap
+        colors = plt.cm.tab10.colors[:len(coord_types)]
+        
+        # Create pie chart without labels or percentages on the slices
+        wedges, _ = ax.pie(percentages, 
+                          wedgeprops=dict(width=0.5, edgecolor='w'),
+                          startangle=90,
+                          colors=colors)
+        
+        # Create legend entries with color-coded boxes
+        legend_labels = [f'CN={coord_type}: {pct:.1f}%' for coord_type, pct in sorted_data]
+        
+        # Add a legend box to the right of the pie chart
+        ax.legend(wedges, legend_labels, 
+                  title="Coordination Numbers",
+                  loc="center left", 
+                  bbox_to_anchor=(1, 0.5),
+                  frameon=True,
+                  fancybox=True,
+                  shadow=True)
+        
+        ax.axis('equal')
+        
+        if atom_type:
+            plt.title(f'Average Distribution of {atom_type} Atom Coordination', fontsize=14)
+        else:
+            plt.title(f'Average Distribution of Atom Coordination', fontsize=14)
+            
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f"{output_file}.png"), dpi=300, bbox_inches='tight')
+        plt.show()  # Added to display the plot
+        plt.close()
+    
+    return overall_avg_percentages
+
+
+def plot_coordination_distribution_plotly(avg_percentages, atom_type, plot_cn, output_dir="./", output_file="CN_distribution"):
+    """
+    Plot an interactive pie chart showing the overall average distribution of coordination numbers.
+    
+    Parameters
+    ----------
+    avg_percentages : Dict[int, List[float]]
+        Dictionary of average percentages per coordination number
+    atom_type : Optional[str]
+        Chemical symbol for target atoms
+    plot_cn : bool
         Boolean to indicate if the plot should be generated
     output_dir : str, optional
         Directory where output files will be saved
@@ -199,18 +278,55 @@ def plot_coordination_distribution(avg_percentages, atom_type, plot, output_dir=
     overall_avg_percentages = {coord_type: sum(percentages) / len(percentages) for coord_type, percentages in
                                avg_percentages.items()}
 
-    if plot:
-        plt.figure(figsize=(10, 7))
-        labels = [f'CN={coord_type}: {pct:.1f}%' for coord_type, pct in overall_avg_percentages.items()]
-        plt.pie(overall_avg_percentages.values(),
-                labels=labels,
-                autopct='%1.1f%%',
-                colors=plt.cm.tab10.colors[:len(overall_avg_percentages)],
-                startangle=90)
-        plt.axis('equal')
-        plt.title(f'Average Distribution of {atom_type} Atom Coordination', fontsize=14)
-        plt.savefig(os.path.join(output_dir, f"{output_file}.png"), dpi=300, bbox_inches='tight')
-        plt.close()
+    if plot_cn:
+        # Sort by coordination number for consistent ordering
+        sorted_data = sorted(overall_avg_percentages.items())
+        coord_types = [f"CN={item[0]}" for item in sorted_data]
+        percentages = [item[1] for item in sorted_data]
+        
+        # Create hover text with percentage information
+        hover_info = [f"CN={coord_type}: {pct:.2f}%" for coord_type, pct in sorted_data]
+        
+        # Create Plotly pie chart
+        fig = go.Figure(data=[go.Pie(
+            labels=coord_types,
+            values=percentages,
+            hole=0.4,  # Donut chart style
+            textinfo='label+percent',
+            hoverinfo='text',
+            hovertext=hover_info,
+            textfont=dict(size=12),
+            marker=dict(
+                colors=[f'rgb{tuple(int(c*255) for c in plt.cm.tab10(i)[:3])}' for i in range(len(coord_types))],
+                line=dict(color='white', width=2)
+            ),
+        )])
+        
+        # Update layout for better appearance
+        if atom_type:
+            title_text = f'Average Distribution of {atom_type} Atom Coordination'
+        else:
+            title_text = 'Average Distribution of Atom Coordination'
+            
+        fig.update_layout(
+            title=dict(
+                text=title_text,
+                font=dict(size=16)
+            ),
+            legend=dict(
+                orientation='h',
+                xanchor='center',
+                x=0.5,
+                y=-0.1
+            ),
+            height=600,
+            width=800
+        )
+        
+        # Save only HTML version - no need for kaleido
+        html_path = os.path.join(output_dir, f"{output_file}.html")
+        fig.write_html(html_path)
+        print(f"Interactive coordination distribution chart saved to {html_path}")
 
     return overall_avg_percentages
 
@@ -250,7 +366,7 @@ def log_coordination_data(distribution, atom_type, output_dir="./"):
 
 
 def coordination(filename, target_atoms, ligand_atoms, custom_cutoffs, skip_frames=10, 
-                 plot=False, output_dir="./"):
+                plot_cn=False, output_dir="./"):
     """
     Process a trajectory file to compute coordination numbers for each frame.
     
@@ -266,7 +382,7 @@ def coordination(filename, target_atoms, ligand_atoms, custom_cutoffs, skip_fram
         Dictionary with custom cutoff distances
     skip_frames : int, optional
         Interval for skipping frames (default: 10)
-    plot : bool, optional
+    plot_cn : bool, optional
         Boolean to indicate if plots should be generated (default: False)
     output_dir : str, optional
         Directory where output files will be saved (default: "./")
@@ -295,12 +411,15 @@ def coordination(filename, target_atoms, ligand_atoms, custom_cutoffs, skip_fram
 
     # Get atom type for labeling
     atom_type = (target_atoms if isinstance(target_atoms, str)
-                 else chemical_symbols[target_atoms] if isinstance(target_atoms, int)
-                 else None)
+                else chemical_symbols[target_atoms] if isinstance(target_atoms, int)
+                else None)
 
     # Generate analysis results and plots
-    avg_percentages = get_avg_percentages(coordination_dict, atom_type, plot, output_dir=output_dir)
-    distribution = plot_coordination_distribution(avg_percentages, atom_type, plot, output_dir=output_dir)
+    avg_percentages = get_avg_percentages(coordination_dict, atom_type, plot_cn, output_dir=output_dir)
+    
+    # Always use Plotly for coordination distribution
+    distribution = plot_coordination_distribution(avg_percentages, atom_type, plot_cn, output_dir=output_dir)
+        
     log_coordination_data(distribution, atom_type, output_dir=output_dir)
 
     return [coordination_dict, avg_percentages, distribution, atom_type]
@@ -364,7 +483,7 @@ def contacts_frame(atoms, target_atoms, contact_atoms, custom_cutoffs, mic=True)
 
 def plot_contact_heatmap(contact_matrix, skip_frames, time_step, x_labels, y_labels, atom_type, output_dir="./"):
     """
-    Plots and saves a heatmap showing contact times between target and contact atoms.
+    Plots and saves an interactive heatmap showing contact times between target and contact atoms.
     
     Parameters
     ----------
@@ -388,26 +507,51 @@ def plot_contact_heatmap(contact_matrix, skip_frames, time_step, x_labels, y_lab
     None
     """
     contact_times_matrix = np.sum(contact_matrix, axis=0) * skip_frames * time_step / 1000
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(contact_times_matrix, xticklabels=x_labels, yticklabels=y_labels, 
-                cmap="viridis", cbar_kws={"label": "Contact Time (ps)"})
-    plt.xlabel("Contact Indices", fontsize=12)
-    plt.ylabel("Target Indices", fontsize=12)
-    plt.title("Heatmap of contact times within cutoffs", fontsize=14)
-    plt.tight_layout()
     
+    # Create interactive hover text
+    hover_text = []
+    for i, target_label in enumerate(y_labels):
+        hover_row = []
+        for j, contact_label in enumerate(x_labels):
+            hover_row.append(f"Target: {target_label}<br>" +
+                           f"Contact: {contact_label}<br>" +
+                           f"Contact time: {contact_times_matrix[i, j]:.2f} ps")
+        hover_text.append(hover_row)
+    
+    # Create the Plotly heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=contact_times_matrix,
+        x=x_labels,
+        y=y_labels,
+        colorscale='Viridis',
+        hoverinfo='text',
+        text=hover_text,
+        colorbar=dict(title='Contact Time (ps)')
+    ))
+    
+    # Update layout for better appearance
+    fig.update_layout(
+        title=dict(text='Heatmap of contact times within cutoffs', font=dict(size=16)),
+        xaxis=dict(title='Contact Indices', tickfont=dict(size=10)),
+        yaxis=dict(title='Target Indices', tickfont=dict(size=10)),
+        width=900,
+        height=700,
+        autosize=True
+    )
+    
+    # Save only HTML version - no need for kaleido
     if atom_type is not None:
-        filename = os.path.join(output_dir, f"{atom_type}_heatmap_contacts.png")
+        html_filename = os.path.join(output_dir, f"{atom_type}_heatmap_contacts.html")
     else:
-        filename = os.path.join(output_dir, "heatmap_contacts.png")
+        html_filename = os.path.join(output_dir, "heatmap_contacts.html")
     
-    plt.savefig(filename, dpi=300, bbox_inches='tight')
-    plt.close()
+    fig.write_html(html_filename)
+    print(f"Interactive contact heatmap saved to {html_filename}")
 
 
 def plot_distance_heatmap(sub_dm_total, x_labels, y_labels, atom_type, output_dir="./"):
     """
-    Plots and saves a heatmap of average distances between target and contact atoms.
+    Plots and saves an interactive heatmap of average distances between target and contact atoms.
     
     Parameters
     ----------
@@ -427,26 +571,58 @@ def plot_distance_heatmap(sub_dm_total, x_labels, y_labels, atom_type, output_di
     None
     """
     average_distance_matrix = np.mean(sub_dm_total, axis=0)
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(average_distance_matrix, xticklabels=x_labels, yticklabels=y_labels, 
-                cmap="viridis", cbar_kws={"label": "Distance (Å)"})
-    plt.xlabel("Contact Indices", fontsize=12)
-    plt.ylabel("Target Indices", fontsize=12)
-    plt.title("Distance matrix of selected atoms", fontsize=14)
-    plt.tight_layout()
+    std_distance_matrix = np.std(sub_dm_total, axis=0)
     
+    # Create hover text with statistical information
+    hover_text = []
+    for i, target_label in enumerate(y_labels):
+        hover_row = []
+        for j, contact_label in enumerate(x_labels):
+            hover_row.append(
+                f"Target: {target_label}<br>" +
+                f"Contact: {contact_label}<br>" +
+                f"Avg distance: {average_distance_matrix[i, j]:.3f} Å<br>" +
+                f"Std deviation: {std_distance_matrix[i, j]:.3f} Å<br>" +
+                f"Min: {np.min(sub_dm_total[:, i, j]):.3f} Å<br>" +
+                f"Max: {np.max(sub_dm_total[:, i, j]):.3f} Å"
+            )
+        hover_text.append(hover_row)
+    
+    # Create the Plotly heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=average_distance_matrix,
+        x=x_labels,
+        y=y_labels,
+        colorscale='Viridis',
+        hoverinfo='text',
+        text=hover_text,
+        colorbar=dict(title='Distance (Å)')
+    ))
+    
+    # Update layout for better appearance
+    fig.update_layout(
+        title=dict(text='Distance matrix of selected atoms', font=dict(size=16)),
+        xaxis=dict(title='Contact Indices', tickfont=dict(size=10)),
+        yaxis=dict(title='Target Indices', tickfont=dict(size=10)),
+        width=900,
+        height=700,
+        autosize=True
+    )
+    
+    # Save only HTML version - no need for kaleido
     if atom_type is not None:
-        filename = os.path.join(output_dir, f"{atom_type}_heatmap_distance.png")
+        html_filename = os.path.join(output_dir, f"{atom_type}_heatmap_distance.html")
     else:
-        filename = os.path.join(output_dir, "heatmap_distance.png")
+        html_filename = os.path.join(output_dir, "heatmap_distance.html")
     
-    plt.savefig(filename, dpi=300, bbox_inches='tight')
-    plt.close()
+    fig.write_html(html_filename)
+    print(f"Interactive distance heatmap saved to {html_filename}")
 
 
 def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, output_dir="./"):
     """
-    Plots and saves a time series of the average contact distance over the trajectory.
+    Plots and saves a time series of the average contact distance over the trajectory using Plotly
+    and also saves a static Matplotlib version as PNG.
     
     Parameters
     ----------
@@ -472,32 +648,153 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
     x = np.arange(len(average_distance_contacts)) * time_step * skip_frames / 1000
     valid_indices = ~np.isnan(average_distance_contacts)
     interpolated = np.interp(x, x[valid_indices], average_distance_contacts[valid_indices])
-
-    fig, ax1 = plt.subplots(figsize=(8, 6))
-
-    ax1.plot(x, interpolated, '-', color="blue", label="Average Distance")
-    ax1.scatter(x[valid_indices], average_distance_contacts[valid_indices], color="blue")
-    ax1.axhline(np.mean(interpolated), linestyle="--", color="blue", 
-                label=f"Mean: {np.mean(interpolated):.2f}")
-    ax1.set_xlabel("Time [ps]", fontsize=12)
-    ax1.set_ylabel("Distance [Å]", fontsize=12, color="blue")
-    ax1.tick_params(axis='y', labelcolor="blue")
-
+    mean_distance = np.mean(interpolated)
+    mean_count = np.mean(contact_count)
+    
+    # Create Plotly figure with dual y-axes (keep existing code)
+    fig = go.Figure()
+    
+    # Add average distance trace
+    fig.add_trace(go.Scatter(
+        x=x, 
+        y=interpolated, 
+        mode='lines+markers',
+        name='Avg Dist',
+        line=dict(color='blue'),
+        yaxis='y'
+    ))
+    
+    # Add mean distance line
+    fig.add_trace(go.Scatter(
+        x=[x[0], x[-1]],
+        y=[mean_distance, mean_distance],
+        mode='lines',
+        name=f'Mean Dist: {mean_distance:.2f} Å',
+        line=dict(color='blue', dash='dash'),
+        yaxis='y'
+    ))
+    
+    # Add contact count trace
+    fig.add_trace(go.Scatter(
+        x=x, 
+        y=contact_count, 
+        mode='lines+markers',
+        name='Contact Count',
+        line=dict(color='red'),
+        yaxis='y2'
+    ))
+    
+    # Add mean contact count line
+    fig.add_trace(go.Scatter(
+        x=[x[0], x[-1]],
+        y=[mean_count, mean_count],
+        mode='lines',
+        name=f'Mean Count: {mean_count:.1f}',
+        line=dict(color='red', dash='dash'),
+        yaxis='y2'
+    ))
+    
+    # Set up dual y-axes with UPDATED title structure
+    fig.update_layout(
+        title='Average Distance of Contacts & Contact Count',
+        xaxis=dict(
+            title='Time (ps)',
+            showgrid=True,
+            gridwidth=0.5
+        ),
+        yaxis=dict(
+            title=dict(  # Corrected nested structure
+                text='Distance (Å)',
+                font=dict(color='blue')
+            ),
+            tickfont=dict(color='blue'),
+            showgrid=True,
+            gridwidth=0.5
+        ),
+        yaxis2=dict(
+            title=dict(  # Corrected nested structure
+                text='Contact count per atom',
+                font=dict(color='red')
+            ),
+            tickfont=dict(color='red'),
+            anchor="x",
+            overlaying="y",
+            side="right"
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        width=900,
+        height=600
+    )
+    
+    # Save HTML version - no need for kaleido
+    html_filename = os.path.join(output_dir, "average_contact_analysis.html")
+    fig.write_html(html_filename)
+    print(f"Interactive contact analysis chart saved to {html_filename}")
+    
+    # CREATE MATPLOTLIB STATIC FIGURE
+    # Create a new figure with two y-axes
+    fig_mpl, ax1 = plt.subplots(figsize=(10, 6))
     ax2 = ax1.twinx()
-    ax2.plot(x, contact_count, '-', color="red", label="Average Contact Count")
-    ax2.axhline(np.mean(contact_count), linestyle="--", color="red", 
-                label=f"Mean: {np.mean(contact_count):.1f}")
-    ax2.set_ylabel("Contact count per atom", fontsize=12, color="red")
-    ax2.tick_params(axis='y', labelcolor="red")
-
-    plt.title("Average Distance of Contacts & Contact Count", fontsize=14)
-    fig.tight_layout()
-
-    fig.legend(loc="center right", bbox_to_anchor=(1.30, 0.5))
-
-    filename = os.path.join(output_dir, "average_contact_analysis.png")
-    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    
+    # Plot distance data on left axis
+    line1 = ax1.plot(x, interpolated, 'o-', color='blue', label='Avg Dist', 
+                     markersize=4, markevery=max(1, len(x)//20))
+    ax1.axhline(y=mean_distance, color='blue', linestyle='--', 
+                label=f'Mean Distance: {mean_distance:.2f} Å')
+    
+    # Plot contact count on right axis
+    line2 = ax2.plot(x, contact_count, 'o-', color='red', label='Contact Count', 
+                     markersize=4, markevery=max(1, len(x)//20))
+    ax2.axhline(y=mean_count, color='red', linestyle='--', 
+                label=f'Mean Count: {mean_count:.1f}')
+    
+    # Set labels and titles
+    ax1.set_xlabel('Time (ps)', fontsize=12)
+    ax1.set_ylabel('Distance (Å)', color='blue', fontsize=12)
+    ax2.set_ylabel('Contact count per atom', color='red', fontsize=12)
+    plt.title('Average Distance of Contacts & Contact Count', fontsize=14)
+    
+    # Set tick colors
+    ax1.tick_params(axis='y', labelcolor='blue')
+    ax2.tick_params(axis='y', labelcolor='red')
+    
+    # Add grid
+    ax1.grid(True, alpha=0.3)
+    
+    # Combine legends from both axes
+    lines = line1 + line2
+    labels = [l.get_label() for l in lines]
+    
+    # Add legend with lines from both axes - ADJUSTED POSITION
+    all_lines = line1 + line2 + [
+        plt.Line2D([0], [0], color='blue', linestyle='--'),
+        plt.Line2D([0], [0], color='red', linestyle='--')
+    ]
+    all_labels = [l.get_label() for l in line1 + line2] + [
+        f'Mean Dist: {mean_distance:.2f} Å',
+        f'Mean Count: {mean_count:.1f}'
+    ]
+    
+    # Move legend lower to avoid overlap with x-axis labels
+    fig_mpl.legend(all_lines, all_labels, loc='upper center', 
+                  bbox_to_anchor=(0.5, -0.02), ncol=2)
+    
+    # Add more padding at the bottom for the legend
+    plt.tight_layout(pad=1.2)
+    
+    # Save the figure as PNG with expanded bottom margin to include legend
+    png_filename = os.path.join(output_dir, "average_contact_analysis.png")
+    plt.savefig(png_filename, dpi=300, bbox_inches='tight')
+    plt.show()  # Added to display the plot
     plt.close()
+    
+    print(f"Static contact analysis chart saved to {png_filename}")
 
 
 def save_matrix_data(sub_dm_total, contact_matrix, output_dir="./"):

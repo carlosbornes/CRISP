@@ -1,0 +1,8 @@
+Coordination Analysis for O Atoms
+======================================
+
+Overall Average Percentages:
+  CN=0: 81.87%
+  CN=1: 15.74%
+  CN=2: 2.24%
+  CN=3: 0.15%

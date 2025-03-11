@@ -10,6 +10,8 @@ import numpy as np
 from typing import List, Optional, Dict
 from ase.io import read
 import plotly.graph_objects as go
+import plotly.io as pio
+pio.renderers.default = "notebook"
 
 # Dictionary of covalent radii for all elements in Ångström
 # Used to scale atom sizes appropriately in the visualization
