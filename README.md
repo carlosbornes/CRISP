@@ -9,68 +9,72 @@ CRISP
 
 # CRISP (Clustering, Radial, and other Insightful Simulation Post-processing)
 
-# What's CRISP?
-CRISP is a post-simulation analysis package built on the foundation of Atomic Simulation Environment (ASE). It is designed to unlock the secrets hidden within your molecular dynamics simulations, offering a comprehensive suite of tools for in-depth exploration and analysis.
+## What is CRISP?
+CRISP is a post-simulation analysis package built on the Atomic Simulation Environment (ASE). It is designed for efficient and insightful analysis of molecular dynamics (MD) and other simulations, enabling in-depth exploration with just a few lines of code, including powerful visualization options.
 
-### **CRISP's Features:**
-1. **Clustering Mastery:**
-   - Uncover patterns in atomic arrangements through advanced clustering algorithms (DBSCAN) with built-in periodicity awareness.
-   - Identify and visualize distinct groups of atoms, shedding light on structural transitions and dynamic behaviours.
+## Features
+- **User-friendly**: Optimized for ease of use with detailed examples and extensive outputs for nuanced data analysis.
+- **Highly parallelized**: Utilizes parallelization techniques that scale linearly with the number of CPU cores, allowing for fast analysis of large systems and long simulations on high-performance computing clusters.
 
-2. **Radial Proficiency:**
-   - Harness the Partial Radial Distribution Function (PRDF) analysis to dissect spatial relationships between atoms.
-   - Tailor your analysis by defining custom indices, also providing dynamic PRDF of a simulation, hence further insights into the distribution of atomic pairs.
+## Analysis Toolkit
 
-3. **Insightful Post-Processing - Customizable MSD:**
-   - Illuminate the dynamics of your simulations with the Mean Square Displacement (MSD) calculation, offering a quantitative measure of atom movements.
-   - Customize your analysis by specifying custom atom indices, allowing you to focus on specific subsets of atoms and gain targeted insights into their dynamics.
+### 1. Cluster Comprehension
+- Perform in-depth clustering analysis in molecular dynamics or Monte Carlo simulations using advanced algorithms like DBSCAN.
+- Works with both periodic and non-periodic systems.
+- Identify, visualize, and track distinct atom clusters to gain insights into unbiased clustering of selected atoms.
 
-4. **Hydrogen Bond Elegance:**
-   - Dive into the world of molecular interactions with hydrogen bond calculations.
-   - Understand the subtle but crucial interactions of Donor-acceptor with customised based on the varied cutoff for angles and distances.
+### 2. Customizable Radial Distribution Functions
+- Compute and plot partial radial distribution functions (PRDF) for selected atoms or atom types.
+- Easily analyze radial relationships between atoms with periodic boundary conditions.
 
-5. **Coordination Analysis:**
-   - Gain a deeper understanding of the spatial arrangement of atoms by exploring coordination patterns in your simulation.
-   - With customised cutoff for atom pairs gain further insights into the material's structure and behaviour.
+### 3. Mean Square Displacement (MSD)
+- Quantify atomic motion over time using MSD calculations, providing key insights into diffusion and dynamics.
+- Customize analysis by selecting specific atom indices to focus on particular subsets of atoms.
 
-7. **Correlation of Atom-Pairs:**
-   - Computes and visualizes the correlation matrix between pairs of atoms based on their indices.
-   - It analyzes the trajectory data to determine how often pairs of atoms are within a specified cutoff distance across frames.
-     
-8. **Atom Indices classification:**
-   - A customisable method to classify the atoms of the structure with possible cutoffs for multiple pairs.
-    
+### 4. Hydrogen Bond Analysis
+- Identify and analyze hydrogen bonds with a single line of code.
+- Customize hydrogen bond parameters or atom indices for detailed and specific analysis.
+- Track structural parameters to understand the nature and stability of hydrogen bonds in your system.
 
+### 5. Coordination Analysis
+- Compute average coordination numbers for specific atom types with customizable cutoffs.
+- Analyze contact times of selected atom types to study dynamic behavior efficiently.
 
-# Requirements
-This package is built around the ASE (Atomic Simulation Environment) and thus requires the installation of ASE, available at: [ASE Installation Guide](https://wiki.fysik.dtu.dk/ase/install.html).
+### 6. Error Analysis
+- Accurately estimate the error of any computed property using statistical techniques.
+- Choose between autocorrelation function or block averaging to calculate the error of the mean, improving result reliability.
+- Assess simulation convergence by analyzing vector or scalar properties like atomic positions or energy.
 
-The clustering uses DBSCAN (Density-Based Spatial Clustering of Applications with Noise) implemented by scikit-learn, available at: [scikit-learn Installation](https://scikit-learn.org/stable/install.html).
+### 7. Efficient and Robust Sampling
+- Sample structures using Furthest Point Sampling (FPS) with SOAP descriptors.
+- Efficiently subsample large databases or simulations by selecting the most diverse structures while avoiding redundancy.
 
-For interactive 3D plots of clustering, CRISP utilizes the seaborn package. Ensure you have seaborn installed by following the instructions at: [Seaborn Installation](https://seaborn.pydata.org/installing.html).
+## Requirements
+CRISP is primarily based on the Atomic Simulation Environment (ASE). You can install ASE following the guide: [ASE Installation Guide](https://wiki.fysik.dtu.dk/ase/install.html).
 
-Other packages rquired are the following:
-   - joblib 
-   - statsmodels 
-   - pandas 
-   - plotly 
-   - networkx
+Additional dependencies include:
+- `joblib`
+- `statsmodels`
+- `pandas`
+- `plotly`
+- `networkx`
+- `DScribe`
+- `seaborn`
 
-# Installation
-To be updated
-
+## Installation
+Installation instructions will be provided soon.
 # Current Modules
 
 To learn how to use each of the modules, please visit [examples]([https://github.com/Indranil17/TEST/tree/main/example](https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb
 )).
-   - CRISP.atom_indices
-   - CRISP.prdf
-   - CRISP.msd_plot
-   - CRISP.h_bond
-   - CRISP.coord
-   - CRISP.clustering_FrameAnalysis
-   - CRISP.clustering_TrajAnalysis
-   - CRISP.atom_correlation
+   - `CRISP.atom_indices`
+   - `CRISP.prdf`
+   - `CRISP.msd_plot`
+   - `CRISP.h_bond`
+   - `CRISP.coord`
+   - `CRISP.clustering_FrameAnalysis`
+   - `CRISP.clustering_TrajAnalysis`
+   - `CRISP.atom_correlation`
 
 # Acknowledgments
 The package is from the (Nano)Materials modelling group, at Charles University.
