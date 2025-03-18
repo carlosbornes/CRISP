@@ -92,7 +92,6 @@ Email: lukas.grajciar@natur.cuni.cz
 
 <img src="https://github.com/Indranil17/CRISP_HOST/blob/main/group_logo.png" width="100">
 
-
 ### Contributors
 If there is something you would like to see added to this package or if you would like to contribute,  
 please email us at sahai@natur.cuni.cz or daniel.willimetz@natur.cuni.cz
