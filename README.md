@@ -5,7 +5,7 @@ CRISP
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/CRISP/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/CRISP/branch/main)
 
 
-<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_logo.png" width="300">
+<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_logo2.png" width="300">
 
 # CRISP (Clustering, Radial, and other Insightful Simulation Post-processing)
 
