@@ -82,12 +82,13 @@ It has two sub-packages and ten modules. Please see the package's UML map.
 
 # Acknowledgments
 The package is from the (Nano)Materials modelling group, at Charles University.  
+Email: lukas.grajciar@natur.cuni.cz  
 
 <img src="https://github.com/Indranil17/CRISP_HOST/blob/main/group_logo.png" width="50">
 
-Email: lukas.grajciar@natur.cuni.cz
 
 ### Contributors
-If there is something you would like to see added to this package or if you would like to contribute, 
+If there is something you would like to see added to this package or if you would like to contribute,  
+
 please email us at sahai@natur.cuni.cz or daniel.willimetz@natur.cuni.cz
 
