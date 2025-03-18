@@ -247,57 +247,42 @@ def plot_rdf(x_data_all, y_data_all, title=None, output_file=None):
 
 
 def animate_rdf(x_data_all, y_data_all, output_file=None):
-    """
-    Create an animated plot of the RDF across frames and save in interactive format.
-    
-    Parameters
-    ----------
-    x_data_all : np.ndarray
-        Distance values in Ångström
-    y_data_all : List[np.ndarray]
-        RDF values for each frame
-    output_file : str, optional
-        Path to save the animation (if None, just display)
-        
-    Returns
-    -------
-    Animation
-        Matplotlib animation object
-    """
     # Create a figure and axis
     fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Calculate average RDF across all frames
+    y_data_avg = np.mean(y_data_all, axis=0)
 
     # Set x and y axis labels
     plt.xlabel('Distance (Å)', fontsize=12)
     plt.ylabel('g(r)', fontsize=12)
     
     # Find max value for consistent y scaling
-    max_y = max([np.max(y) for y in y_data_all]) * 1.1
+    max_y = max([np.max(y) for y in y_data_all] + [np.max(y_data_avg)]) * 1.1
     
     def update(frame):
         ax.clear()  # Clear the previous frame
         y = y_data_all[frame]
-        ax.plot(x_data_all, y, linewidth=2)
+        
+        # Plot current frame RDF
+        ax.plot(x_data_all, y, linewidth=2, label='Current Frame')
+        
+        # Add average RDF as dashed line with different color
+        ax.plot(x_data_all, y_data_avg, linewidth=2, linestyle='--', 
+                color='purple', label='Average RDF')
         
         # Find the index of the maximum y value
         max_y_index = np.argmax(y)
         max_y_x = x_data_all[max_y_index]
         
-        # Add a line for the maximum y value (keep this)
+        # Add a line for the maximum y value
         ax.axvline(x=max_y_x, color='red', linestyle='--', label=f'Peak at {max_y_x:.2f} Å')
         
         # Add legend
         ax.legend(fontsize=10)
-
-        # Add grid lines
         ax.grid(True, alpha=0.3)
-        
-        # Set consistent y-axis limits
         ax.set_ylim(0, max_y)
-
-        # Add title with frame information
         ax.set_title(f'Radial Distribution Function - Frame {frame}', fontsize=14)
-        
         return ax,
 
     # Create the animation
