@@ -76,12 +76,14 @@ To learn how to use each of the modules, please visit [examples](https://github.
 Inside the example folder, check the [Notebook](https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_example.ipynb) to see them in use and also check the other folders of the example folder to see the outputs.
 It has two sub-packages and ten modules. Please see the package's UML map. 
  
-<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_logo2.png" width="300">
+<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_map.png" width="800">
 
 
 
 # Acknowledgments
-The package is from the (Nano)Materials modelling group, at Charles University.
+The package is from the (Nano)Materials modelling group, at Charles University. 
+<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_logo2.png" width="100">
+
 Email: lukas.grajciar@natur.cuni.cz
 
 ### Contributors
