@@ -49,20 +49,27 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 - Sample structures using Furthest Point Sampling (FPS) with SOAP descriptors.
 - Efficiently subsample large databases or simulations by selecting the most diverse structures while avoiding redundancy.
 
-## Requirements
-CRISP is primarily based on the Atomic Simulation Environment (ASE). You can install ASE following the guide: [ASE Installation Guide](https://wiki.fysik.dtu.dk/ase/install.html).
+# Requirements
+This package is built around the ASE (Atomic Simulation Environment) and thus requires the installation of ASE, available at: [ASE Installation Guide](https://wiki.fysik.dtu.dk/ase/install.html).
 
-Additional dependencies include:
-- `joblib`
-- `statsmodels`
-- `pandas`
-- `plotly`
-- `networkx`
-- `DScribe`
-- `seaborn`
+The clustering uses DBSCAN (Density-Based Spatial Clustering of Applications with Noise) implemented by scikit-learn, available at: [scikit-learn Installation](https://scikit-learn.org/stable/install.html).
 
-## Installation
-Installation instructions will be provided soon.
+For interactive 3D plots of clustering, CRISP utilizes the seaborn package. Ensure you have seaborn installed by following the instructions at: [Seaborn Installation](https://seaborn.pydata.org/installing.html).
+
+# Installation
+1. Now for the testing period, just pull the folder to the local drive, and then go inside the "CRISP" folder locally inside the terminal. 
+
+2. In the same terminal type    
+```
+pip install .
+```
+, then you can run the package in your local system environment globally.
+
+3. In a virtual environment as a standalone installation, please install the dependencies via the command line, type 
+```
+pip install joblib statsmodels IPython pandas scikit-learn plotly seaborn jupyter networkx
+```
+
 # Current Modules
 
 To learn how to use each of the modules, please visit [examples]([https://github.com/Indranil17/TEST/tree/main/example](https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb
