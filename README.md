@@ -16,7 +16,7 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 - **User-friendly**: Optimized for ease of use with detailed examples and extensive outputs for nuanced data analysis.
 - **Highly parallelized**: Utilizes parallelization techniques that scale linearly with the number of CPU cores, allowing for fast analysis of large systems and long simulations on high-performance computing clusters.
 
-## Analysis Toolkit
+## Analysis Toolkit Highlights 
 
 ### 1. Cluster Comprehension
 - Perform in-depth clustering analysis in molecular dynamics or Monte Carlo simulations using advanced algorithms like DBSCAN.
