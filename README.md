@@ -18,9 +18,6 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 - **Interactive Visualisation**: HTML outputs to interact, it can help to see structural changes.  
 - **Integration**: ASE, scikit-learn and other Python packages.  
 
-![image](https://github.com/user-attachments/assets/bc552d0c-1b7f-4f3f-9dd6-f385b604fa41)
-
-
 ## Analysis Toolkit Highlights 
 
 ### 1. Cluster Comprehension
