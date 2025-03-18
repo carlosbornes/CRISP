@@ -16,7 +16,7 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 - **User-friendly**: Optimized for ease of use with detailed examples and extensive outputs for nuanced data analysis.
 - **Highly parallelized**: Utilizes parallelization techniques that scale linearly with the number of CPU cores, allowing for fast analysis of large systems and long simulations on high-performance computing clusters.
 
-## Analysis Toolkit
+## Analysis Toolkit Highlights 
 
 ### 1. Cluster Comprehension
 - Perform in-depth clustering analysis in molecular dynamics or Monte Carlo simulations using advanced algorithms like DBSCAN.
@@ -73,7 +73,7 @@ pip install joblib statsmodels IPython pandas scikit-learn plotly seaborn jupyte
 # Current Modules
 
 To learn how to use each of the modules, please visit [examples](https://github.com/Indranil17/CRISP_HOST/tree/main/example).
-Inside the example folder, check the [Notebook](https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_example.ipynb) to see them in use and also check the other folders of the example folder to see the outputs.
+Inside the example folder, check the [Notebook](https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb) to see them in use and also check the other folders of the example folder to see the outputs.
 It has two sub-packages and ten modules. Please see the package's UML map. 
  
 <img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_map.png" width="800">
@@ -81,18 +81,13 @@ It has two sub-packages and ten modules. Please see the package's UML map.
 
 
 # Acknowledgments
-The package is from the (Nano)Materials modelling group, at Charles University. 
-<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_logo2.png" width="100">
+The package is from the (Nano)Materials modelling group, at Charles University.  
+Email: lukas.grajciar@natur.cuni.cz  
 
-Email: lukas.grajciar@natur.cuni.cz
+<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/group_logo.png" width="100">
+
 
 ### Contributors
-If there is something you would like to see added to this package or if you would like to contribute, please email us at sahai@natur.cuni.cz or daniel.willimetz@natur.cuni.cz
-
-### EXAMPLE
-https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb
-
-### Docs
-Master-Doc (Let's update in the Doc)
-https://docs.google.com/document/d/14Bk8PkkE2FewRq1oMdXlqDkW0xUFwhyhYRJRxv559Ro/edit?usp=sharing
+If there is something you would like to see added to this package or if you would like to contribute,  
+please email us at sahai@natur.cuni.cz or daniel.willimetz@natur.cuni.cz
 
