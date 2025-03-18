@@ -89,6 +89,5 @@ Email: lukas.grajciar@natur.cuni.cz
 
 ### Contributors
 If there is something you would like to see added to this package or if you would like to contribute,  
-
 please email us at sahai@natur.cuni.cz or daniel.willimetz@natur.cuni.cz
 
