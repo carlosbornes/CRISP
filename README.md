@@ -84,7 +84,7 @@ It has two sub-packages and ten modules. Please see the package's UML map.
 The package is from the (Nano)Materials modelling group, at Charles University.  
 Email: lukas.grajciar@natur.cuni.cz  
 
-<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/group_logo.png" width="50">
+<img src="https://github.com/Indranil17/CRISP_HOST/blob/main/group_logo.png" width="100">
 
 
 ### Contributors
