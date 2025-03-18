@@ -87,7 +87,8 @@ The package is from the (Nano)Materials modelling group, at Charles University.
 Email: lukas.grajciar@natur.cuni.cz
 
 ### Contributors
-If there is something you would like to see added to this package or if you would like to contribute, please email us at sahai@natur.cuni.cz or daniel.willimetz@natur.cuni.cz
+If there is something you would like to see added to this package or if you would like to contribute, 
+please email us at sahai@natur.cuni.cz or daniel.willimetz@natur.cuni.cz
 
 ### EXAMPLE
 https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb
