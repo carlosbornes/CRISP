@@ -20,7 +20,7 @@ CRISP is organized into two main subpackages:
 The following tutorials are organized according to these subpackages.
 
 Simulation Utility
------------------
+--------------------
 
 This section covers utilities for manipulating and preparing simulation data.
 
@@ -68,7 +68,7 @@ making it easier to analyze specific subsets within your simulation data.
        Saved cutoff indices for O-O to ./indices_new/cutoff/O-O_cutoff.csv
 
 Atomic Trajectory Visualization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Visualize atomic trajectories in 3D to understand motion and structural changes.
 
@@ -154,12 +154,12 @@ The convergence plot shows the distance between each sampled structure and its n
 illustrating how the algorithm selects maximally diverse structures from the trajectory.
 
 Error Analysis
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 Perform statistical error analysis on time-correlated simulation data using different methods.
 
 Example 1: Position Data Analysis
-********************************
+***********************************
 
 .. code:: python
 
@@ -195,7 +195,7 @@ Example 1: Position Data Analysis
    :alt: Autocorrelation function for position data
 
 Example 2: Energy Data Analysis
-******************************
+*********************************
 
 .. code:: python
 
@@ -235,7 +235,7 @@ Example 2: Energy Data Analysis
    :alt: Autocorrelation function for energy data
 
 Interatomic Distance Calculation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Calculate and save distance matrices between atoms for further analysis.
 
@@ -263,17 +263,17 @@ Calculate and save distance matrices between atoms for further analysis.
 This utility calculates distance matrices between atoms, accounting for periodic boundary conditions, and saves the results for later use in clustering or other analyses.
 
 Data Analysis
-------------
+---------------
 
 This section covers methods for analyzing simulation results and extracting physical insights.
 
 Contact and Coordination Analysis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 CRISP provides tools to analyze both coordination environments and dynamic contacts between atoms.
 
 1. Coordination Analysis
-************************
+**************************
 
 .. code:: python
 
@@ -319,7 +319,7 @@ allowing you to identify dominant coordination environments and their frequencie
 the simulation trajectory.
 
 2. Contact Analysis
-******************
+********************
 
 .. code:: python
 
@@ -376,7 +376,7 @@ These visualizations enable the identification of persistent contacts and transi
 interactions throughout the simulation trajectory.
 
 Hydrogen-Bonding Analysis
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Analyze hydrogen bond networks and dynamics in your simulation.
 
@@ -442,7 +442,7 @@ enabling both qualitative pattern recognition through the network graph and quan
 through the correlation matrix.
 
 Radial Distribution Function (RDF)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Perform Radial Distribution Function analysis to investigate spatial relationships between atoms.
 
@@ -503,12 +503,12 @@ These visualizations help identify characteristic distances between atoms and st
 features such as coordination shells and their changes throughout the simulation.
 
 Mean-Square Displacement (MSD)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Calculate and visualize Mean-Square Displacement to analyze diffusion in two steps.
 
 Step 1: Calculate MSD values from trajectory
-*******************************************
+*********************************************
 
 .. code:: python
 
@@ -541,7 +541,7 @@ Step 1: Calculate MSD values from trajectory
     MSD data has been saved to msd_results.csv
 
 Step 2: Analyze MSD data and calculate diffusion coefficient
-********************************************************
+**************************************************************
 
 .. code:: python
 
@@ -589,7 +589,7 @@ Clustering Analysis
 Identify atomic clusters using advanced clustering algorithms. CRISP offers both single-frame and trajectory-based clustering analysis.
 
 1. Single-Frame Clustering
-************************
+***************************
 
 Analyze clusters in a specific frame of your trajectory:
 
@@ -660,7 +660,7 @@ The 3D visualization shows the spatial distribution of clusters in the selected 
 represented by a different color and unclustered atoms shown separately.
 
 2. Trajectory-Based Clustering
-***************************
+*******************************
 
 Analyze clusters throughout a trajectory to observe their evolution:
 
@@ -728,7 +728,7 @@ These analyses are particularly valuable for studying nucleation processes, phas
 and self-assembly phenomena in molecular dynamics simulations.
 
 Example Jupyter Notebooks
-------------------------
+---------------------------
 
 For detailed examples and interactive tutorials, refer to the Jupyter notebooks included in the package:
 

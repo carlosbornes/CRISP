@@ -5,5 +5,6 @@ Tutorials
    :maxdepth: 1
 
    Introductory Tutorials <intro_tutorial/intro_tutorials>
-   specific_tutorials/h_bond_analysis
-   specific_tutorials/clustering_correlation
+   specific_tutorials/Clustering
+   specific_tutorials/H_Bond
+   specific_tutorials/RDF

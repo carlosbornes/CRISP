@@ -1,5 +1,5 @@
 Data Analysis Tutorials
-=====================
+========================
 
 Step-by-step guides for analyzing simulation results using CRISP's data analysis capabilities.
 

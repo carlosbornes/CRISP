@@ -1,5 +1,5 @@
 Simulation Utility Tutorials
-===========================
+==============================
 
 Learn how to use CRISP's simulation utility functions for simulation preparation and data processing.
 

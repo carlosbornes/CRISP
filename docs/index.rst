@@ -11,8 +11,8 @@ It is designed to unlock the secrets hidden within your
 molecular simulations, offering a comprehensive 
 suite of tools for in-depth exploration for both analysis and visulaisation.
 
-The CRISP python code is developed through our GitLab repository:
-https://gitlab.com/praguelab
+The CRISP python code is developed through our GitHub repository:
+https://github.com/Nanomaterials-Modelling-Group-Prague
 
 
 .. grid:: 1 1 2 2
