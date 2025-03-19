@@ -67,7 +67,8 @@ def plot_atomic_trajectory(
     frame_skip: int = 100,
     plot_title: str = None,
     show_plot: bool = False,
-    atom_size_scale: float = 1.0
+    atom_size_scale: float = 1.0,
+    plot_lines: bool = False  # New parameter: default to scatter-only mode
 ):
     """
     Create a 3D visualization of atom trajectories with all atom types displayed.
@@ -88,6 +89,8 @@ def plot_atomic_trajectory(
         Whether to display the plot (default: False)
     atom_size_scale : float, optional
         Scale factor for atom sizes (default: 1.0)
+    plot_lines : bool, optional
+        Whether to connect trajectory points with lines (default: False)
         
     Returns
     -------
@@ -181,18 +184,7 @@ def plot_atomic_trajectory(
         pos = np.array(selected_positions[idx])
         color = colors[i % len(colors)]
         
-        # Add trajectory line and markers
-        fig.add_trace(go.Scatter3d(
-            x=pos[:, 0],
-            y=pos[:, 1],
-            z=pos[:, 2],
-            mode='lines+markers',
-            name=f'Atom {idx}',
-            line=dict(width=3, color=color),
-            marker=dict(size=4, color=color),
-        ))
-        
-        # Add annotations for first and last frames
+        # Add annotations for first and last frames (now outside of if/else)
         first_frame_pos = pos[0]
         last_frame_pos = pos[-1]
         
@@ -222,6 +214,34 @@ def plot_atomic_trajectory(
                 font=dict(color=color, size=10)
             )
         ])
+        
+        if plot_lines:
+            # Add trajectory line and markers (original behavior)
+            fig.add_trace(go.Scatter3d(
+                x=pos[:, 0],
+                y=pos[:, 1],
+                z=pos[:, 2],
+                mode='lines+markers',
+                name=f'Atom {idx}',
+                line=dict(width=3, color=color),
+                marker=dict(size=4, color=color),
+            ))
+        else:
+            # Scatter-only mode: just show points for each frame
+            fig.add_trace(go.Scatter3d(
+                x=pos[:, 0],
+                y=pos[:, 1],
+                z=pos[:, 2],
+                mode='markers',
+                name=f'Atom {idx}',
+                marker=dict(
+                    size=5,
+                    color=color,
+                    symbol='circle',
+                    opacity=0.8,
+                    line=dict(color='black', width=0.5)
+                )
+            ))
     
     # Set plot title
     if not plot_title:
@@ -241,7 +261,7 @@ def plot_atomic_trajectory(
             aspectmode='cube'
         ),
         margin=dict(l=0, r=0, b=0, t=40),
-        scene_annotations=annotations
+        scene_annotations=annotations  # Always include annotations
     )
     
     # Create output directory if needed

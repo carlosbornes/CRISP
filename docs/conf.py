@@ -25,8 +25,8 @@ import CRISP
 # -- Project information -----------------------------------------------------
 
 project = 'CRISP'
-copyright = ("2024, Indranil Saha, Lukas Grajciar")
-author = 'Indranil Saha, Lukas Grajciar'
+copyright = '2024, Indranil Saha, Lukas Grajciar, Daniel Willimetz'
+author = 'Indranil Saha, Lukas Grajciar, Daniel Willimetz'
 
 # The short X.Y version
 version = ''

@@ -4,29 +4,37 @@ Introductory Tutorials
 This section provides an overview of the basic functionalities offered by CRISP. \
 Each tutorial introduces a specific feature of the package, guiding you through typical use cases.
 
-First verify the installation by importing CRISP and its dependencies
+First verify the installation by importing CRISP and its dependencies:
 
 .. code:: python
 
     import CRISP
+    print(f"CRISP version: {CRISP.__version__}")
 
 
-Atom Indices
-^^^^^^^^^^^^^^^^^^^
-CRISP allows for the classification and visualization of atoms based on \
-custom-defined indices, making it easier to analyze specific subsets within your simulation data.
+CRISP is organized into two main subpackages:
+
+- ``simulation_utility``: Tools for preparing and processing simulation data
+- ``data_analysis``: Methods for analyzing simulation results
+
+The following tutorials are organized according to these subpackages.
+
+Simulation Utility
+-----------------
+
+This section covers utilities for manipulating and preparing simulation data.
+
+Atomic Indices
+^^^^^^^^^^^^^^^^
+
+CRISP allows for the classification of atoms based on custom-defined indices, 
+making it easier to analyze specific subsets within your simulation data.
 
 1. **Classify Atom Indices**
 
-   To classify atom indices, follow these steps:
-
-   - Provide the path to the trajectory file (.traj format).
-   - Specify the output folder where the classified atom indices will be saved.
-   - Define the cutoffs to classify the atoms in a dictionary format.
-
    .. code:: python
 
-       from CRISP.atom_indices import run_atom_indices
+       from CRISP.simulation_utility.atomic_indices import atom_indices, run_atom_indices
 
        # Path to your ASE trajectory file
        file_path = "./wrapped_traj.traj"
@@ -47,10 +55,6 @@ custom-defined indices, making it easier to analyze specific subsets within your
 
    **Output:**
 
-   After running the above code, you'll receive output similar to the following, 
-   which details the number of indices found for each atom type and where 
-   the results are saved:
-
    .. code-block:: text
 
        Length of H indices: 120
@@ -63,659 +67,675 @@ custom-defined indices, making it easier to analyze specific subsets within your
        Saved cutoff indices for Al-Si to ./indices_new/cutoff/Al-Si_cutoff.csv
        Saved cutoff indices for O-O to ./indices_new/cutoff/O-O_cutoff.csv
 
-2. **Visualize Atom Indices**
+Atomic Trajectory Visualization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   Once you have classified the atom indices, you can visualize them to gain a better understanding of the spatial distribution and relationships within your molecular system.
+Visualize atomic trajectories in 3D to understand motion and structural changes.
 
-   - Load the saved atom indices for further analysis or visualization.
-   - Use the `visualize` function to create a visual representation of the atom indices for a specific frame.
+.. code:: python
+
+    from CRISP.simulation_utility.atomic_traj_linemap import plot_atomic_trajectory
+    import numpy as np
+
+    # Path to trajectory file
+    traj_path = "./wrapped_traj.traj"
+    
+    # Load atom indices for visualization
+    oxygen_indices = np.load("./indices_detailed/ex_fram_ox.npy")
+    
+    # Generate interactive 3D visualization of trajectories
+    plot_atomic_trajectory(
+        traj_path=traj_path,
+        selected_indices=oxygen_indices,
+        output_path="oxygen_trajectories.html",
+        frame_skip=10,
+        plot_title="Oxygen Atom Trajectories",
+        show_plot=True
+    )
+
+**Output:**
 
-   .. code:: python
+.. code-block:: text
+
+    Loading trajectory from ./wrapped_traj.traj (using every 1th frame)...
+    Loaded 21 frames from trajectory
+    Selected 1 atoms for trajectory plotting: [593]
+    Simulation box dimensions: [24.34499931 24.34499931 24.34499931] Å
+    Analyzing atom types in first frame (total atoms: 744, max index: 743)...
+    Found 4 atom types: Si, Al, O, H
+    Plot has been saved to ./atomic_traj_linemap/o_atom_trajectory.html
+
+**Visualisation Output:**
+
+.. raw:: html
+   :file: ../images/introductory_tutorials/o_atom_trajectory.html
+
+This interactive 3D visualization allows you to:
+
+- Rotate, zoom, and pan to explore atomic trajectories
+- Track the movement of selected atoms over time
+
+Subsampling
+^^^^^^^^^^^^^^^^
+
+Extract representative structures from a trajectory using Farthest Point Sampling.
+
+.. code:: python
+
+    from CRISP.simulation_utility.subsampling import subsample
+    
+    # Path to trajectory file
+    all_frames = subsample(
+        filename="./Subsmapling/local_minima.traj",
+        n_samples=30,
+        index_type="all",
+        file_format="traj",
+        skip=10,
+        plot_subsample=True,
+        output_dir="./Subsmapling"
+    )
+    
+    print(f"Selected {len(all_frames)} representative structures")
+
+**Output:**
+
+.. code-block:: text
+
+   Saved convergence plot to ./Subsmapling/subsampled_convergence.png
+   Saved 30 subsampled structures to ./Subsmapling/subsample_local_minima.traj
 
-       import numpy as np
+**Visualisation Output:**
+
+.. image:: ../images/introductory_tutorials/subsampled_convergence.png
+   :width: 600
+   :alt: Convergence plot for subsampling
+
+The convergence plot shows the distance between each sampled structure and its nearest neighbor, 
+illustrating how the algorithm selects maximally diverse structures from the trajectory.
+
+Error Analysis
+^^^^^^^^^^^^^
 
-       # Load the saved indices for Al atoms
-       al_indices = np.load("./indices_new/Al_indices.npy")
+Perform statistical error analysis on time-correlated simulation data using different methods.
 
-       # Print the loaded indices
-       print("Al_Indices:", al_indices)
+Example 1: Position Data Analysis
+********************************
 
-       from CRISP.visualize_atom_indices import visualize
+.. code:: python
 
-       # Visualize the atom indices for the specified frame
-       visualize(file_path, frame_index=2)
+    from CRISP.simulation_utility.error_analysis import autocorrelation_analysis
+    import numpy as np
+    
+    # Load position data
+    data_positions = np.load("./error/positions.npy")
+    
+    # Analyze using autocorrelation method
+    res_positions = autocorrelation_analysis(
+        data_positions,
+        plot_acf=True,
+        max_lag=500
+    )
+    
+    print(res_positions)
 
-   **Output:**
+**Output:**
 
-   The output from loading the indices will look like this:
+.. code-block:: text
 
-   .. code-block:: text
+    {'mean': array([11.84336219,  6.56230374,  6.34512439]), 
+     'acf_err': array([0.11042688, 0.0483816 , 0.06882431]), 
+     'std': array([0.21002227, 0.09201757, 0.13089782]), 
+     'tau_int': 69.11286151958006, 
+     'optimal_lag': 109}
 
-       Al_Indices: [168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185
-                    186 187 188 189 190 191]               
+**Visualization Output:**
 
+.. image:: ../images/introductory_tutorials/ACF_position_analysis.png
+   :width: 600
+   :alt: Autocorrelation function for position data
+
+Example 2: Energy Data Analysis
+******************************
 
-   The specified frame will also be visualized. 
+.. code:: python
 
-.. image:: /images/introductory_tutorials/frame_visulation.png
-   :alt: Frame Atoms 
+    from CRISP.simulation_utility.error_analysis import autocorrelation_analysis, block_analysis
+    import numpy as np
+    
+    # Load energy data from log file
+    data_energy = np.loadtxt("./error/md_20k.log", skiprows=1, usecols=2)
+    
+    # Analyze using autocorrelation method
+    acf_error = autocorrelation_analysis(data_energy, plot_acf=True)
+    
+    # Analyze using blocking method
+    block_error = block_analysis(data_energy, convergence_tol=0.001, plot_blocks=False)
+    
+    print(acf_error)
+    print(block_error)
 
+**Output:**
 
+.. code-block:: text
 
-Atom Coordination
-^^^^^^^^^^^^^^^^^^^
-CRISP provides tools to understand and explore the spatial
-arrangement of atoms by analyzing coordination patterns within 
-your simulation data. The `calculate_atom_coordination` function 
-allows you to compute the coordination numbers of atoms based on 
-custom-defined cutoffs.
+    {'mean': -3065.5796212000005, 
+     'acf_err': 0.0054549762052233325, 
+     'std': 0.6834300195116669, 
+     'tau_int': 0.318542675191111, 
+     'optimal_lag': 9}
+    {'mean': -3065.5796212000005, 
+     'block_err': 0.02208793396091249, 
+     'std': 0.6834300195116669, 
+     'converged_blocks': 32}
 
+**Visualization Output:**
 
-1. **Calculate Atom Coordination**
+.. image:: ../images/introductory_tutorials/ACF_ener_analysis.png
+   :width: 600
+   :alt: Autocorrelation function for energy data
 
-   To calculate the coordination number of specific atoms in your trajectory:
+Interatomic Distance Calculation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calculate and save distance matrices between atoms for further analysis.
+
+.. code:: python
+
+    from CRISP.simulation_utility.interatomic_distances import distance_calculation, save_distance_matrices
+
+    # Path to trajectory file
+    traj_path = "./wrapped_traj.traj"
+    frame_skip = 10
+    index_type = ["O"]  # Focus on oxygen atoms
+
+    # Calculate full and subset distance matrices
+    full_dms, sub_dms = distance_calculation(traj_path, frame_skip, index_type)
+
+    # Save the calculated distance matrices
+    save_distance_matrices(full_dms, sub_dms, index_type, output_dir="distance_calculations_zeo")
+
+**Output:**
 
-   - Provide the path to the trajectory file (.traj format).
-   - Specify the path to the saved indices of the atoms you are interested in.
-   - Define the cutoffs for coordination analysis in a dictionary format.
-   - Specify the atom type for which the coordination number will be calculated.
+.. code-block:: text
+
+    Distance matrices saved in 'distance_calculations_zeo/distance_matrices.pkl'
 
-   .. code:: python
-
-       from CRISP import cn_atom
-
-       # Path to your ASE trajectory file
-       file_path = "./wrapped_traj.traj"
-
-       # Path to the saved indices of the atoms of interest
-       indices_path = "./indices_new/O_indices.npy"
-
-       # Output file to save the coordination data
-       output_file = "coordination_data.pkl"
-
-       # Define the cutoffs and atom coordination
-       cutoffs = {("O", "O"): 3.0}
-       atom_cn = "O"
-
-       # Call the function with the file paths and parameters
-       cn_atom.calculate_atom_coordination(file_path, indices_path, output_file, frame_skip=2, cutoffs=cutoffs, atom=atom_cn)
-
-   **Output:**
-
-   After running the code, you will obtain the coordination types for 
-   the atoms of interest. Here is an example of the output:
-
-   .. code-block:: text
-
-       First entry of the coordination types list: 
-       {192: 6, 193: 6, 194: 6, 195: 6, 196: 6, 197: 6, 198: 6, 199: 6, 
-        200: 6, 201: 7, 202: 6, 203: 6, 204: 6, 205: 6, 206: 6, 207: 6, 
-        208: 6, 209: 6, 210: 6, 211: 6, 212: 7, 213: 7, 214: 8, 215: 7, 
-        216: 7, 217: 7, 218: 7, 219: 7, 220: 6, 221: 6, 222: 6, 223: 6, 
-        224: 6, 225: 6, 226: 6, 227: 6, 228: 6, 229: 6, 230: 6, 231: 6, 
-        232: 6, 233: 6, 234: 6, 235: 6, 236: 6, 237: 6, 238: 6, 239: 6, 
-        240: 6, 241: 6}
-
-   This output represents the coordination number of each atom of interest 
-   within the specified cutoff distance. 
-   The data is saved in a pickle file (`coordination_data.pkl`) 
-   for further analysis or visualization.
-
-
-2. **Visualize Atom Coordination**
-
-   After calculating the coordination numbers, you can analyze and visualize the coordination distribution:
-
-   - Use the path to the pickle file generated from the previous step.
-   - Optionally specify a path to save the plot of the coordination distribution.
-
-   .. code:: python
-
-       from CRISP.cn_atom_analysis import main as analyze_and_plot
-
-       # Define the file paths
-       pickle_file = './coordination_data.pkl'
-       plot_output_file = None  # or specify a path to save the plot, e.g., 'coordination_plot.png'
-
-       # Call the analysis and plotting function
-       analyze_and_plot(pickle_file, plot_output_file)
-
-   **Output:**
-
-   The analysis will provide an overview of the coordination distribution among the atoms, along with an image plot. Below is an example of the output:
-
-   .. code-block:: text
-
-       Overall Average percentage of 1-coordinated atoms: 0.53%
-       Overall Average percentage of 2-coordinated atoms: 3.75%
-       Overall Average percentage of 3-coordinated atoms: 5.24%
-       Overall Average percentage of 4-coordinated atoms: 1.49%
-       Overall Average percentage of 5-coordinated atoms: 1.60%
-       Overall Average percentage of 6-coordinated atoms: 72.37%
-       Overall Average percentage of 7-coordinated atoms: 14.65%
-       Overall Average percentage of 8-coordinated atoms: 0.38%
-
-   The results are visualized in a coordination plot, which can be saved as an image if a path is specified.
-
-.. image:: /images/introductory_tutorials/atom_cn.png
-   :alt: Coordination Number Plot
-
-Hydrogen-Bonding
-^^^^^^^^^^^^^^^^^^^
-
-Hydrogen bond interactions between donor and acceptor atoms can be 
-calculated and visualized in your simulation. Use the `analyze_hydrogen_bonds` 
-function to perform the analysis. 
-
-1. **Run Hydrogen Bond Analysis**
-
-   To perform hydrogen-bond analysis, follow these steps:
-   
-   - A trajectory file (.traj format).
-   - Indices files for donors, acceptors, and hydrogens (in `.npy` format).
-   - Define parameters for your analysis such as distance cutoffs and angle cutoff.
-   
-   .. code:: python
-
-      from CRISP.h_bond import analyze_hydrogen_bonds
-
-      # Path to your ASE trajectory file
-      traj_path = './wrapped_traj.traj'
-
-      # Path to the indices of donor atoms
-      donor_indices = './indices_detailed/ex_fram_ox.npy'
-
-      # Path to the indices of acceptor atoms
-      acceptor_indices = './indices_detailed/ex_fram_ox.npy'
-
-      # Path to the indices of hydrogen atoms
-      hydrogen_indices = './indices_detailed/wat_h.npy'
-
-      # Output file to save the hydrogen bond data
-      output_file = './hydrogen_bonds.csv'
-
-      # Frame skip parameter
-      frame_skip = 2
-
-      # Distance cutoffs
-      donor_acceptor_distance = 3.5
-      donor_hydrogen_distance = 1.2
-
-      # Angle cutoff in degrees
-      angle_cutoff = 30.0
-
-      # Call the analysis function
-      analyze_hydrogen_bonds(traj_path, donor_indices, acceptor_indices, hydrogen_indices, output_file, frame_skip, donor_acceptor_distance, donor_hydrogen_distance, angle_cutoff)
-
-   **Output:**
-
-   After running the code, the hydrogen bond \
-   information will be saved in a CSV file. This file will include details on the hydrogen bonds detected in the simulation frames according to the specified criteria.
-
-   Example output:
-
-   .. code-block:: text
-
-      Frame, Donor Index, Acceptor Index, Hydrogen Index, Distance (Donor-Acceptor), Distance (Donor-Hydrogen), Angle (Donor-Hydrogen-Acceptor)
-      1, 105, 210, 314, 3.45, 1.15, 28.4
-      2, 106, 211, 315, 3.50, 1.20, 29.0
-      ...
-
-   This CSV file can be opened with standard data analysis \
-   tools for further examination and visualization.
-
-2. **Visualize Hydrogen Bond Data**
-
-   After analyzing hydrogen bonds, you can create various plots to visualize 
-   the hydrogen bond data. Use the following functions to generate and save plots.
-
-   - **2D-weighted Hydrogen Bond Plot**
-
-     The `h_bond_2d` function generates a 2D-weighted plot of the hydrogen bonds. 
-     This plot helps visualize the spatial distribution of hydrogen bonds 
-     in your simulation.
-
-     .. code:: python
-
-        from CRISP.h_bond_analysis import h_bond_2d
-
-        # Path to the CSV file with hydrogen bond data
-        hydrogen_bonds_csv = 'hydrogen_bonds.csv'
-
-        # Generate 2D hydrogen bond plot
-        h_bond_2d(hydrogen_bonds_csv)
-
-     .. image:: /images/introductory_tutorials/hydrogen_bond_2d_plot.png
-        :alt: 2D plot of hydrogen bonds
-
-   - **Total Hydrogen Bonds Per Frame**
-
-     The `plot_total_hydrogen_bonds_per_frame` function plots the total 
-     number of hydrogen bonds detected per frame. 
-     This helps in understanding the variation in hydrogen bonding 
-     throughout the simulation.
-
-     .. code:: python
-
-        from CRISP.h_bond_analysis import plot_total_hydrogen_bonds_per_frame
-
-        # Path to the CSV file with total hydrogen bonds per frame
-        total_hydrogen_bonds_csv = 'total_hydrogen_bonds_per_frame.csv'
-
-        # Plot total hydrogen bonds per frame
-        plot_total_hydrogen_bonds_per_frame(total_hydrogen_bonds_csv)
-
-     .. image:: /images/introductory_tutorials/total_hydrogen_bonds_per_frame.png
-        :alt: Plot of total hydrogen bonds per frame
-
-   - **Count Double Donor Hydrogen Bonds**
-
-     The `count_double_donor_hydrogen_bonds` function counts the 
-     double donor (DD) and single donor (SD) hydrogen bonds for each frame. 
-     The results are saved to a text file.
-
-     .. code:: python
-
-        from CRISP.h_bond_analysis import count_double_donor_hydrogen_bonds, write_results_to_file
-
-        # Path to the CSV file with hydrogen bond data
-        hydrogen_bonds_csv = 'hydrogen_bonds.csv'
-        
-        # Path to save the results
-        hydrogen_bond_results_txt = 'hydrogen_bond_results.txt'
-
-        # Count DD and SD hydrogen bonds
-        frame_counts = count_double_donor_hydrogen_bonds(hydrogen_bonds_csv)
-
-        # Write the results to the text file
-        write_results_to_file(hydrogen_bond_results_txt, frame_counts)
-
-   - **Plot Hydrogen Bond Counts**
-
-     The `plot_hydrogen_bond_counts` function creates a plot showing the counts of double donor hydrogen bonds for each frame.
-
-     .. code:: python
-
-        from CRISP.h_bond_analysis import plot_hydrogen_bond_counts
-
-        # Path to the text file with hydrogen bond counts
-        hydrogen_bond_results_txt = 'hydrogen_bond_results.txt'
-
-        # Plot hydrogen bond counts
-        plot_hydrogen_bond_counts(hydrogen_bond_results_txt)
-
-     .. image:: /images/introductory_tutorials/hydrogen_bond_counts_plot.png
-        :alt: Plot of hydrogen bond counts
-
-3. **H-Bond Networks**
-
-   For visualizing hydrogen-bond networks, 
-   you can generate plots of hydrogen bond connectivity 
-   for specific frames or over the entire trajectory. 
-   This allows for detailed exploration of the hydrogen 
-   bonding network structure in your system.
-
-   - **Visualize H-Bond Networks:**
-
-     .. code:: python
-
-        from CRISP.h_bond_visualization import visualize_hydrogen_bonds
-
-        # Example usage with average=True
-        csv_file = './hydrogen_bonds.csv'
-        wat_array_path = './indices_detailed/ex_fram_ox.npy'
-
-        # For a single frame
-        visualize_hydrogen_bonds(csv_file, wat_array_path, frame_index=1, average=False)
-
-        # For a trajectory
-        visualize_hydrogen_bonds(csv_file, wat_array_path, average=True)
-
-   **Output:**
-
-   The visualization produces two plots:
-
-   - **Connectivity Matrix:**
-
-    .. image:: ../images/introductory_tutorials/hb_connectivity_matrix.png
-        :alt: Plot of h-bond connectivity matrix 
-        :align: center
-
-
-   - **NetworkX Plot:**
-
-    .. image:: ../images/introductory_tutorials/hb_networkx_plot.png
-        :alt: Plot of h-bond network 
-        :align: center
-
-   - **Node Size in the Graph:**
-
-     - Represents the frequency of the indices during the simulation. 
-     - A larger node size indicates a more persistent hydrogen bond.
-
-   - **Edge Width between Nodes:**
-
-     - Indicates the number of paired hydrogen bonds during the simulation.
-     - A thicker edge width signifies a stable hydrogen bond between nodes/indices, while multiple thin edges suggest less stable hydrogen bonds with multiple indices.
-
-   Overall, a bigger node size tells you that an index has a 
-   more persistent hydrogen bond, and a thicker edge width indicates \
-   stable hydrogen bonds with specific indices. Multiple thin edges may 
-   reflect hydrogen bonds with various indices but less stability.
-
+This utility calculates distance matrices between atoms, accounting for periodic boundary conditions, and saves the results for later use in clustering or other analyses.
+
+Data Analysis
+------------
+
+This section covers methods for analyzing simulation results and extracting physical insights.
+
+Contact and Coordination Analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+CRISP provides tools to analyze both coordination environments and dynamic contacts between atoms.
+
+1. Coordination Analysis
+************************
+
+.. code:: python
+
+    from CRISP.data_analysis.contact_coordination import coordination
+    
+    # Path to trajectory file
+    filename = "./wrapped_traj.traj"
+    
+    # Define target and bonded atoms for coordination analysis
+    target_atoms = "O"
+    bonded_atoms = ["O"]
+    
+    # Define custom cutoffs for coordination
+    custom_cutoffs = {('Al', 'O'): 3.5, ('O', 'O'): 2.5}
+    
+    # Perform coordination analysis
+    cn = coordination(filename, 
+                     target_atoms, bonded_atoms, custom_cutoffs, 
+                     skip_frames=10, plot_cn=True, output_dir="./CN_data")
+
+**Output:**
+
+.. code-block:: text
+
+    Interactive coordination distribution chart saved to ./CN_data/CN_distribution.html
+
+**Visualization Output:**
+
+.. image:: ../images/introductory_tutorials/CN_distribution.png
+   :width: 600
+   :alt: Coordination distribution analysis
+
+.. image:: ../images/introductory_tutorials/CN_time_series.png
+   :width: 600
+   :alt: Coordination number time series
+
+The visualizations show both:
+- The distribution of coordination numbers across all analyzed frames, revealing dominant coordination environments
+- The time evolution of coordination numbers throughout the trajectory, showing structural changes over time
+
+The visualization shows the distribution of coordination numbers for the selected atom types,
+allowing you to identify dominant coordination environments and their frequencies throughout
+the simulation trajectory.
+
+2. Contact Analysis
+******************
+
+.. code:: python
+
+    from CRISP.data_analysis.contact_coordination import contacts
+    
+    # Path to trajectory file
+    filename = "./wrapped_traj.traj"
+    
+    # Define target and bonded atoms for contact analysis
+    target_atoms = "O"
+    bonded_atoms = ["O"]
+    
+    # Define custom cutoffs for contacts
+    custom_cutoffs = {('Al', 'O'): 3.5, ('O', 'O'): 2.5}
+    
+    # Perform contact analysis
+    sub_dm, cal_contacts = contacts(
+        filename, target_atoms, bonded_atoms, custom_cutoffs,
+        skip_frames=1,
+        plot_distance_matrix=True,
+        plot_contacts=True,
+        time_step=50.0*1000,  # fs
+        output_dir="./Contacts_data")
+
+**Output:**
+
+.. code-block:: text
+
+    Interactive contact heatmap saved to ./Contacts_data/O_heatmap_contacts.html
+    Interactive contact analysis chart saved to ./Contacts_data/average_contact_analysis.html
+    Static contact analysis chart saved to ./Contacts_data/average_contact_analysis.png
+    Interactive distance heatmap saved to ./Contacts_data/O_heatmap_distance.html
+
+**Visualization Output:**
+
+.. image:: ../images/introductory_tutorials/average_contact_analysis.png
+   :width: 600
+   :alt: Average contact analysis
+
+.. image:: ../images/introductory_tutorials/contact_distance_heatmap.png
+   :width: 600
+   :alt: Contact distance heatmap
+
+.. image:: ../images/introductory_tutorials/contact_time_heatmap.png
+   :width: 600
+   :alt: Contact time heatmap
+
+The contact analysis provides multiple visualizations:
+ - A summary of average contact statistics and their distribution
+ - A distance heatmap showing the spatial relationships between atoms
+ - A time heatmap showing the persistence of contacts throughout the trajectory
+
+These visualizations enable the identification of persistent contacts and transient
+interactions throughout the simulation trajectory.
+
+Hydrogen-Bonding Analysis
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Analyze hydrogen bond networks and dynamics in your simulation.
+
+.. code:: python
+
+    from CRISP.data_analysis.h_bond import hydrogen_bonds
+    
+    # Perform hydrogen bond analysis
+    h_bonds_both_plots = hydrogen_bonds(
+        filename="./wrapped_traj.traj",
+        skip_frames=1,
+        acceptor_atoms=["O"],
+        angle_cutoff=120,
+        mic=True,
+        output_dir="./H_Bond_Data",
+        time_step=50*1000,
+        plot_count=True,
+        plot_heatmap=True,
+        plot_graph_frame=True,        # Generate frame-specific plot
+        plot_graph_average=True,      # Generate average plot
+        graph_frame_index=10          # Use frame 10 instead of default 0
+    )
+
+**Output:**
+
+.. code-block:: text
+
+    Hydrogen bond count plot saved to './H_Bond_Data/h_bond_count.png'
+    H-bond structure 2D histogram saved to './H_Bond_Data/h_bond_structure.png'
+    Generated and saved 196 unique donor/acceptor atom indices to ./H_Bond_Data/donor_acceptor_indices.npy
+    Generating hydrogen bond network visualizations for frame 10...
+    Interactive correlation matrix saved as './H_Bond_Data/hbond_correlation_matrix_frame_10.html'
+    Figure saved as './H_Bond_Data/hbond_network_frame_10.html'
+    Generating average hydrogen bond network visualization...
+    Interactive correlation matrix saved as './H_Bond_Data/hbond_correlation_matrix_average.html'
+    Figure saved as './H_Bond_Data/hbond_network_average.html'
+
+**Visualization Output:**
+
+.. image:: ../images/introductory_tutorials/h_bond_count.png
+   :width: 600
+   :alt: Hydrogen bond count over time
+
+.. image:: ../images/introductory_tutorials/h_bond_structure.png
+   :width: 600
+   :alt: Hydrogen bond structure heatmap
+
+.. raw:: html
+   :file: ../images/introductory_tutorials/hbond_network_frame_10.html
+
+.. raw:: html
+   :file: ../images/introductory_tutorials/hbond_correlation_matrix_frame_10.html
+
+The hydrogen bond analysis provides multiple complementary visualizations:
+
+- Time series of hydrogen bond counts throughout the trajectory
+- Heatmap showing hydrogen bond structure and persistence over time
+- Interactive network graph showing hydrogen bonding patterns for a specific frame (frame 10)
+- Correlation matrix visualizing the strength and frequency of hydrogen bonds between specific atoms
+
+These visualizations work together to provide a comprehensive understanding of hydrogen bonding networks, 
+enabling both qualitative pattern recognition through the network graph and quantitative analysis 
+through the correlation matrix.
 
 Radial Distribution Function (RDF)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Perform Radial Distribution Function (RDF) analysis to \
-investigate the spatial relationships between atoms in your simulation.
+Perform Radial Distribution Function analysis to investigate spatial relationships between atoms.
 
-1. **Run RDF Analysis**
+.. code:: python
 
-   To perform RDF analysis, follow these steps:
+    from CRISP.data_analysis.prdf import analyze_rdf
+    
+    # Path to trajectory file
+    traj_file = "./wrapped_traj.traj"
+    
+    # RDF parameters
+    rmax = 10.0         # Maximum radius
+    nbins = 50          # Number of bins for histogram
+    frame_skip = 1      # Analyze every frame
+    output_dir = "custom_ase"
+    output_filename = None  # Auto-generate filename
+    use_prdf = False    # Calculate total RDF (not partial)
+    atomic_indices = None
+    
+    # Perform RDF analysis
+    data_rdf = analyze_rdf(
+        use_prdf=use_prdf,
+        rmax=rmax,
+        traj_path=traj_file,
+        nbins=nbins,
+        frame_skip=frame_skip,
+        output_filename=output_filename,
+        atomic_indices=atomic_indices,
+        output_dir=output_dir,
+        plot_prdf=True  # Generate plots
+    )
 
-   - Define the pairwise atom types you want to analyze.
-   - Set parameters such as the maximum distance (`rmax`) and the number of bins (`nbins`).
-   - Specify paths to the trajectory file and index files for the atoms of interest.
-   - Optionally, provide a custom filename for the RDF output.
+**Output:**
 
-   .. code:: python
+.. code-block:: text
 
-      from CRISP.prdf import analyze_rdf
+    Data saved in 'custom_ase/rdf_total.pkl'
+    Static plot saved in 'custom_ase/rdf_total_plot.png'
+    Interactive animation saved to 'custom_ase/rdf_total_animation.html'
+    GIF animation saved to 'custom_ase/rdf_total_animation.gif'
+    Animation saved in 'custom_ase/rdf_total_animation.gif'
 
-      # Parameters for RDF analysis
-      pairwise = ('O', 'Al')  # Pairwise atom symbols
-      rmax = 12.0             # Maximum distance of RDF
-      nbins = 100             # Number of bins to divide RDF
-      use_prdf = True         # Flag to use PRDF for the indices
-      traj_path = './wrapped_traj.traj'  # Path to the trajectory file
-      wat_array_path = './indices_detailed/ex_fram_ox.npy'  # Path to the water indices array
-      al_array_path = './indices_detailed/al_frw.npy'       # Path to the aluminum indices array
-      output_filename = 'prdf_o_al_custom'  # Optional: specify a custom filename without extension
+**Visualization Output:**
 
-      # Call the analyze_rdf function with optional parameters
-      x_data_all, y_data_all = analyze_rdf(pairwise, rmax, traj_path, wat_array_path, al_array_path, nbins, use_prdf, frame_skip=2, output_filename=output_filename) 
+.. image:: ../images/introductory_tutorials/rdf_total_plot.png
+   :width: 600
+   :alt: Radial Distribution Function plot
 
-   **Output:**
+.. raw:: html
+   :file: ../images/introductory_tutorials/rdf_total_animation.html
 
-   After running the RDF analysis, you will obtain the RDF data, 
-   which can be visualized to understand the spatial distribution of atoms. 
-   The results will be saved in a pickle file for plotting and animation.
+The RDF analysis provides both static and interactive visualizations:
 
-2. **Visualize RDF**
+- A static plot showing the time-averaged radial distribution function
+- An interactive animation displaying the evolution of the RDF across multiple frames
 
-   To visualize the RDF data, you can plot the RDF and create animations 
-   to observe changes across simulation frames.
-
-   - **Plot the RDF:**
-
-     .. code:: python
-
-        from CRISP.prdf_plot import plot_rdf_from_pickle
-
-        # Plotting the RDF
-        plot_rdf_from_pickle("./PRDF/prdf_o_al_custom.pkl")
-
-     **Output:**
-
-     The RDF plot will illustrate the radial distribution of atoms, 
-     showing how the density of atoms varies as a function of distance.
-
-    .. image:: ../images/introductory_tutorials/rdf_plot.png
-        :alt: Plot PRDF
-        :align: center
-
-   - **Animate the RDF:**
-
-     .. code:: python
-
-        from CRISP.prdf_plot import animate_rdf_from_pickle
-
-        # Create an animation of the RDF
-        animate_rdf_from_pickle("./PRDF/prdf_o_al_custom.pkl")
-
-     **Output:**
-
-     The animation will display the changes in the RDF as frames progress, providing a dynamic view of the spatial relationships over time.
-
-    .. image:: ../images/introductory_tutorials/rdf_animation.gif
-        :alt: Animate PPRDF
-        :align: center
-
+These visualizations help identify characteristic distances between atoms and structural 
+features such as coordination shells and their changes throughout the simulation.
 
 Mean-Square Displacement (MSD)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Quantify atomic movements over time by calculating and 
-visualizing the Mean-Square Displacement (MSD) of atoms. 
-This analysis provides insights into the dynamics and diffusion 
-characteristics of atoms in your simulation.
-
-1. **Calculate MSD**
-
-   To calculate the MSD, you will need to load the trajectory 
-   and atom indices, and then use the `DiffusionCoefficient` class 
-   from CRISP to compute the MSD and diffusion coefficient.
-
-   - Provide the path to your trajectory file (.traj format).
-   - Supply the path to the atom indices file (.npy format).
-   - Set the timestep for the simulation. (important to keep in mind 
-     the time stepsizes and no. of skips)
-   
-   .. code:: python
-
-      from CRISP.msd_plot import DiffusionCoefficient
-      from ase.io import read
-      import numpy as np
-
-      # Path to your ASE trajectory file
-      traj_file = "./wrapped_traj.traj"
-
-      # Path to the indices of the atoms
-      atom_indices = np.load("./indices_detailed/ex_fram_ox.npy")
-
-      # Time step in femtoseconds (0.5fs time stepsize, 1000 skips)
-      timestep = 0.5 * 1000  
-
-      # Read the trajectory
-      traj = read(traj_file, ":")
-
-      # Create an instance of DiffusionCoefficient and perform calculations
-      diffusion_instance = DiffusionCoefficient(traj, timestep, atom_indices.tolist())
-      diffusion_instance.calculate()
-      diffusion_instance.plot()
-
-   **Output:**
-
-   After running the code, you will obtain the diffusion 
-   coefficient and Standard Error (STD):
-
-   Example output:
-
-   .. code-block:: text
-
-      Diffusion Coefficient (m^2/sec^-1): 4.935403012693005e-09
-      Standard Error: 1.17e-04
-
-
-2. **Visualize MSD**
-
-   To visualize the MSD, use the provided plots to examine 
-   the diffusion behavior of atoms in your simulation. The log-log plot helps to analyze the scaling relationship between MSD and time, while the diffusion calculation plot provides detailed insights into the diffusion coefficient.
-
-   .. code:: python
-
-      from CRISP.msd_plot import DiffusionCoefficient
-      diffusion_instance.plot()
-
-   **Outputs:**
-
-   - **Log-Log Plot of MSD vs. Time**: 
-
-     .. image:: /images/introductory_tutorials/msd_log_log_plot.png
-        :alt: Log-Log Plot of MSD
-        :align: center
-
-   - **Diffusion Calculation Plot**:
-
-     .. image:: /images/introductory_tutorials/diffusion_calculation_plot.png
-        :alt: Diffusion Calculation Plot
-        :align: center
-
-
-Clustering
-^^^^^^^^^^^^^^^^^^^
-
-Use advanced clustering algorithms like DBSCAN to uncover 
-patterns in atomic arrangements. This section demonstrates 
-how to analyze and visualize clustering in your simulation data, 
-including handling periodic boundary conditions.
-
-1. **Perform Clustering Analysis**
-
-   To analyze atomic arrangements and identify clusters, 
-   follow these steps:
-
-   - Provide the path to your trajectory file (.traj format).
-   - Load the atom indices from a `.npy` file.
-   - Set the clustering parameters such as distance threshold 
-     and minimum samples.
-
-   .. code:: python
-
-      from CRISP.clustering_FrameAnalysis import StructureAnalyzer
-      import numpy as np
-
-      # Path to your ASE trajectory file
-      traj_file = './wrapped_traj.traj'
-
-      # Path to the atom indices file
-      atom_indices = np.load('./indices_detailed/ex_fram_ox.npy')
-
-      # Parameters for DBSCAN clustering
-      threshold = 3.5  # Distance threshold for clustering
-      min_samples = 2  # Minimum number of samples to form a cluster
-      custom_frame_index = -1  # Analyze the last frame by default
-
-      # Create an instance of StructureAnalyzer and perform the analysis
-      analyzer = StructureAnalyzer(traj_file, atom_indices, threshold, min_samples, custom_frame_index=custom_frame_index)
-      analyzer.analyze_structure()
-
-   **Output:**
-
-   After running the analysis, you will obtain clustering information, including:
-
-   - **Number of Clusters (including noise)**
-   - **Number of Noise Points (Cluster Indices with label -1)**
-   - **Silhouette Score (including and excluding noise)**
-   - **Cluster Indices and Average Cluster Size**
-
-   Example output:
-
-   .. code-block:: text
-
-      Number of Clusters (including noise): 10
-      Number of Noise (Cluster Indices with label -1): 3
-      Silhouette Score (including noise): 0.32688493265485136
-      Silhouette Score (excluding noise): 0.3973633101025257
-      Cluster Indices: {0: array([576, 577, 579, 580, 585, 586, 589, 595, 601, 604, 606, 608, 612,
-         613, 617, 623]), 1: array([578, 584, 607]), 2: array([581, 592, 620]), 3: array([583, 600, 616]), 4: array([587, 588, 593, 598, 603, 619, 621]), 5: array([590, 610, 614]), 6: array([591, 611, 615, 622]), 7: array([594, 597]), 8: array([599, 602, 605, 618])}
-      Average Cluster Size: 5.0
-
-2. **Visualize Clustering**
-
-   To visualize the clustering results, use the interactive plotting capabilities provided by `StructureAnalyzer`. This will generate an interactive Plotly plot that displays the clusters and their characteristics.
-
-   .. code:: python
-
-      # Generate and display interactive clustering plot
-      analyzer.analyze_structure()
-
-   **Output:**
-
-   The analysis will produce an interactive plot that visualizes 
-   the clusters in your simulation. The plot allows you to 
-   explore the clustering results interactively.
-
-   Example plot:
-
-   .. image:: /images/introductory_tutorials/clustering_interactive_plot.png
-      :alt: Interactive Clustering Plot
-      :align: center
-
-
-Atom Correlation
-^^^^^^^^^^^^^^^^^^^
-
-Analyze and visualize the correlation between atom pairs to gain insights into their dynamic relationships over the course of the simulation. This section demonstrates how to calculate and visualize correlations between atoms.
-
-1. **Perform Atom Correlation Analysis**
-
-   To analyze the correlation between atom pairs, follow these 
-   steps:
-
-   - Provide the path to your trajectory file (.traj format).
-   - Load the indices of the atoms to be analyzed.
-   - Set parameters such as cutoff distance and frame skipping.
-
-   .. code:: python
-
-      from CRISP.atom_correlation import plot_correlation_matrix
-
-      # Path to your ASE trajectory file
-      file_path = './wrapped_traj.traj'
-
-      # Paths to the indices of atom pairs
-      atom1_indices_path = "./indices_detailed/ex_fram_ox.npy"
-      atom2_indices_path = "./indices_detailed/ex_fram_ox.npy"
-
-      # Call the function to compute and save correlation data
-      plot_correlation_matrix(
-          file_path=file_path, 
-          atom1_indices_path=atom1_indices_path, 
-          atom2_indices_path=atom2_indices_path, 
-          cutoff=2.8, 
-          frame_skip=1, 
-          average=False, 
-          output_dir='./outputs'
-      )
-
-   **Output:**
-
-   After running the analysis, you will receive the following
-   correlation information:
-
-   - **Average number of positive correlations per frame**
-   - **Total number of positive correlations**
-   - **Average Correlation per indices pair**
-
-   Example output:
-
-   .. code-block:: text
-
-      Average number of positive correlations per frame: 108.00
-      Total number of positive correlations (from atom1_atom2_positive_correlations.csv): 108
-      Average Correlation per indices pair: 1.00
-
-2. **Visualize Atom Correlation**
-
-   To visualize the correlation data, two plots are generated:
-
-   - **Correlation Matrix**: Displays the correlation values between atom pairs.
-   - **Clustermap**: Provides a hierarchical clustering view of the correlation matrix, highlighting patterns in the data.
-
-   **Example Visualizations:**
-
-   - **Correlation Matrix**:
-
-     .. image:: /images/introductory_tutorials/correlation_matrix.png
-        :alt: Correlation Matrix
-        :align: center
-
-   - **Clustermap**:
-
-     .. image:: /images/introductory_tutorials/correlation_clustermap.png
-        :alt: Correlation Clustermap
-        :align: center
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calculate and visualize Mean-Square Displacement to analyze diffusion in two steps.
+
+Step 1: Calculate MSD values from trajectory
+*******************************************
+
+.. code:: python
+
+    from CRISP.data_analysis.msd import calculate_save_msd
+    import numpy as np
+    
+    # Path to trajectory and indices files
+    traj_file = "./SiAl15/nvt.traj"
+    indices_file = "./SiAl15/indices_needed/ex_fram_ox.npy"
+    timestep = 50.0 * 100  # fs
+    
+    # Calculate MSD values and save to CSV
+    msd_values, msd_times = calculate_save_msd(
+        traj_file=traj_file,
+        timestep_value=timestep,
+        indices_file=indices_file,
+        output_file="msd_results.csv",
+        frame_skip=100
+    )
+
+**Output:**
+
+.. code-block:: text
+
+    Loaded full trajectory with 22000 frames
+    Using 220 frames after skipping every 100 frames
+    Loaded 72 atom indices
+    Using adjusted timestep: 50902.52835578362 * fs (original: 50902.52835578362 * fs)
+    Calculating MSD...
+    MSD data has been saved to msd_results.csv
+
+Step 2: Analyze MSD data and calculate diffusion coefficient
+********************************************************
+
+.. code:: python
+
+    from CRISP.data_analysis.msd import analyze_from_csv
+    import pandas as pd
+    
+    # Load the MSD data CSV file
+    df = pd.read_csv("msd_results.csv")
+    print(f"Total data points in file: {len(df)}")
+    
+    # Calculate diffusion coefficient from MSD data
+    D, error = analyze_from_csv(
+        csv_file="msd_results.csv",
+        fit_start=0,
+        fit_end=len(df),  
+        with_intercept=True,
+        plot_msd=True
+    )
+
+**Output:**
+
+.. code-block:: text
+
+    Total data points in file: 220
+    Loaded MSD data from msd_results.csv
+    Diffusion Coefficient: 2.82e-11 cm²/s
+    Error: 7.22e-13 cm²/s
+
+**Visualization Output:**
+
+.. image:: ../images/introductory_tutorials/msd_plot.png
+   :width: 600
+   :alt: Mean Square Displacement plot
+
+The MSD analysis provides quantitative information about particle diffusion, including:
+ - Diffusion coefficient (D) in cm²/s with statistical error
+ - Visual representation of MSD vs. time with linear fit
+
+This two-step approach allows for efficient analysis of large trajectories by first extracting 
+the MSD data and then performing analysis without reprocessing the trajectory.
+
+Clustering Analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Identify atomic clusters using advanced clustering algorithms. CRISP offers both single-frame and trajectory-based clustering analysis.
+
+1. Single-Frame Clustering
+************************
+
+Analyze clusters in a specific frame of your trajectory:
+
+.. code:: python
+
+    from CRISP.data_analysis.clustering import StructureAnalyzer
+    import numpy as np
+    import os
+
+    # Path to trajectory and indices files
+    traj_file = "./SiAl15/nvt.traj"
+    indices_file = "./SiAl15/indices_needed/ex_fram_ox.npy"
+    
+    # Clustering parameters
+    threshold = 3.0
+    min_samples = 3
+    output_dir = "SiAl15_clustering"
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Load atom indices
+    atom_indices = np.load(indices_file)
+
+    # Create analyzer instance
+    analyzer = StructureAnalyzer(
+        traj_file=traj_file,
+        atom_indices=atom_indices,
+        threshold=threshold,
+        min_samples=min_samples,
+        metric='precomputed',
+        custom_frame_index=-1  # Analyze last frame
+    )
+
+    # Perform clustering analysis
+    results = analyzer.analyze_structure(output_dir=output_dir)
+
+**Output:**
+
+.. code-block:: text
+
+    Saving results to directory: SiAl15_clustering
+    3D visualization saved to SiAl15_clustering/nvt_clusters.html
+
+    Number of Clusters: 10
+    Number of Outliers: 9
+    Silhouette Score: 0.2932
+    Average Cluster Size: 6.30
+    Cluster Information:
+      Cluster 0: 14 points
+      Cluster 1: 9 points
+      Cluster 2: 4 points
+      Cluster 3: 7 points
+      Cluster 4: 10 points
+      Cluster 5: 5 points
+      Cluster 6: 3 points
+      Cluster 7: 4 points
+      Cluster 8: 4 points
+      Cluster 9: 3 points
+    Detailed frame data saved to: SiAl15_clustering/frame_data.txt
+    Full analysis data saved to: SiAl15_clustering/single_frame_analysis.pkl
+
+**Visualization Output:**
+
+.. raw:: html
+   :file: ../images/introductory_tutorials/nvt_clusters.html
+
+The 3D visualization shows the spatial distribution of clusters in the selected frame, with each cluster 
+represented by a different color and unclustered atoms shown separately.
+
+2. Trajectory-Based Clustering
+***************************
+
+Analyze clusters throughout a trajectory to observe their evolution:
+
+.. code:: python
+
+    from CRISP.data_analysis.clustering import analyze_trajectory, save_analysis_results, plot_analysis_results
+    import os
+    import numpy as np
+
+    # Path to trajectory and indices files
+    traj_file = "./SiAl15/nvt.traj"
+    indices_file = "./SiAl15/indices_needed/ex_fram_ox.npy"
+    
+    # Clustering parameters
+    threshold = 3.0
+    min_samples = 3
+    skip_frames = 1000  # Analyze every 1000th frame
+    output_dir = "SiAl15_traj_analysis"
+    output_prefix = "SiAl15_traj_clusters"
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Analyze trajectory
+    analysis_results = analyze_trajectory(
+        trajectory_path=traj_file,
+        atom_indices_path=indices_file,
+        threshold=threshold,
+        min_samples=min_samples,
+        skip_frames=skip_frames,
+        output_dir=output_dir,
+        save_html_visualizations=True  # Save HTML visualizations of first and last frames
+    )
+
+    # Save and plot results
+    pickle_file = save_analysis_results(
+        analysis_results=analysis_results,
+        output_dir=output_dir,
+        output_prefix=output_prefix
+    )
+
+    plot_analysis_results(pickle_file, output_dir=output_dir)
+
+**Output:**
+
+.. code-block:: text
+
+    Per-frame data saved to: SiAl15_traj_analysis/nvt_frame_data.txt
+    3D visualization saved to SiAl15_traj_analysis/nvt_first_frame_clusters.html
+    3D visualization saved to SiAl15_traj_analysis/nvt_last_frame_clusters.html
+    Analysis results saved to directory: SiAl15_traj_analysis
+
+**Visualization Output:**
+
+.. image:: ../images/introductory_tutorials/SiAl15_traj_clusters_plot.png
+   :width: 600
+   :alt: Evolution of clusters over time
+
+The trajectory-based clustering visualization shows the evolution of clusters over time, including:
+ - Number of clusters detected at each frame
+ - Average cluster size throughout the trajectory
+ - Distribution of cluster sizes
+ - Temporal changes in clustering patterns
+
+These analyses are particularly valuable for studying nucleation processes, phase transitions,
+and self-assembly phenomena in molecular dynamics simulations.
+
+Example Jupyter Notebooks
+------------------------
+
+For detailed examples and interactive tutorials, refer to the Jupyter notebooks included in the package:
+
+- **Basic Usage Examples**: 
+  `https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb`
+
+
+These notebook provide step-by-step examples with visualizations to help you understand how to use CRISP effectively.
 
 
