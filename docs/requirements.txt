@@ -11,3 +11,6 @@ scikit-learn
 jupyter
 sphinx
 sphinx_rtd_theme
+sphinx_design
+sphinx_copybutton
+pydata_sphinx_theme

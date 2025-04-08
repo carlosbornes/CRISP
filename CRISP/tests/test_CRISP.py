@@ -2,7 +2,7 @@ import unittest
 import os
 import glob
 import numpy as np
-from CRISP.atom_indices import atom_indices, run_atom_indices
+from CRISP.simulation_utility.atomic_indices import atom_indices, run_atom_indices
 import shutil
 
 class TestAtomIndices(unittest.TestCase):
