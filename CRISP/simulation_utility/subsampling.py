@@ -59,7 +59,7 @@ def indices(atoms, ind):
         return idx  # For chemical symbols - either "O", ["O", "H"] or ("O", "H")
 
 
-def compute_soap(structure, all_spec, rcut, idx):
+def compute_soap(structure, all_spec, rcut, ind):
     """Compute SOAP descriptors for a given structure.
     
     Parameters
@@ -79,6 +79,10 @@ def compute_soap(structure, all_spec, rcut, idx):
         Average SOAP descriptor vector for the structure
     """
     periodic_cell = structure.cell.volume > 0
+    idx = indices(structure, ind=ind)
+    if periodic_cell:
+        structure.wrap()
+        
     soap = SOAP(
         species=all_spec,
         periodic=periodic_cell,
@@ -111,11 +115,10 @@ def create_repres(traj, rcut=6, ind="all", n_jobs=-1):
     numpy.ndarray
         Array of SOAP descriptors for each frame in the trajectory
     """
-    all_spec = traj[0].get_chemical_symbols()
-    idx = indices(traj[0], ind=ind)
+    all_spec = sorted({symbol for atoms in traj for symbol in atoms.get_chemical_symbols()})
 
     repres = Parallel(n_jobs=n_jobs)(
-        delayed(compute_soap)(structure, all_spec, rcut, idx) for structure in traj
+        delayed(compute_soap)(structure, all_spec, rcut, ind) for structure in traj
     )
 
     return np.array(repres)
@@ -166,7 +169,7 @@ def subsample(filename, n_samples=50, index_type="all", rcut=6.0, file_format=No
         trajec = [trajec]
     
     repres = create_repres(trajec, ind=index_type, rcut=rcut)
-    perm = fpsample.fps_sampling(repres, n_samples, start_idx=0)
+    perm = fpsample.fps_npdu_kdtree_sampling(repres, n_samples, start_idx=0)
 
     fps_frames = []
 
