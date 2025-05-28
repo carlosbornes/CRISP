@@ -10,12 +10,12 @@ CRISP
 # CRISP (A Comprehensive Repository for Insightful Simulation Post-Processing)
 
 ## What is CRISP?
-CRISP is a post-simulation analysis package built on the Atomic Simulation Environment (ASE). It is designed for efficient and insightful analysis of molecular dynamics (MD) and other simulations, enabling in-depth exploration with just a few lines of code, including powerful visualization options.
+CRISP is a post-simulation analysis package built on the Atomic Simulation Environment (ASE). It is designed for efficient and insightful analysis of molecular dynamics (MD) and other simulations, enabling in-depth exploration with just a few lines of code, including powerful visualisation options.
 
 ## Features
-- **User-friendly**: Optimized for ease of use with detailed examples and extensive outputs for nuanced data analysis.
-- **Highly parallelized**: Utilizes parallelization techniques that scale linearly with the number of CPU cores, allowing for fast analysis of large systems and long simulations on high-performance computing clusters.
-- **Interactive Visualisation**: HTML outputs to interact, it can help to see structural changes.  
+- **User-friendly**: Optimised for ease of use with detailed examples and extensive outputs for nuanced data analysis.
+- **Highly parallelised**: Utilises parallelisation techniques that scale linearly with the number of CPU cores, allowing for fast analysis of large systems and long simulations on high-performance computing clusters.
+- **Interactive Visualisation**: HTML outputs to interact with, which can help to see structural changes.  
 - **Integration**: ASE, scikit-learn and other Python packages.  
 
 ## Analysis Toolkit Highlights 
@@ -23,19 +23,19 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 ### 1. Cluster Comprehension
 - Perform in-depth clustering analysis in molecular dynamics or Monte Carlo simulations using advanced algorithms like DBSCAN.
 - Works with both periodic and non-periodic systems.
-- Identify, visualize, and track distinct atom clusters to gain insights into unbiased clustering of selected atoms.
+- Identify, visualise, and track distinct atom clusters to gain insights into unbiased clustering of selected atoms.
 
 ### 2. Customizable Radial Distribution Functions
 - Compute and plot partial radial distribution functions (PRDF) for selected atoms or atom types.
-- Easily analyze radial relationships between atoms with periodic boundary conditions.
+- Easily analyse radial relationships between atoms with periodic boundary conditions.
 
 ### 3. Mean Square Displacement (MSD)
 - Quantify atomic motion over time using MSD calculations, providing key insights into diffusion and dynamics.
-- Customize analysis by selecting specific atom indices to focus on particular subsets of atoms.
+- Customise analysis by selecting specific atom indices to focus on particular subsets of atoms.
 
 ### 4. Hydrogen Bond Analysis
-- Identify and analyze hydrogen bonds with a single line of code.
-- Customize hydrogen bond parameters or atom indices for detailed and specific analysis.
+- Identify and analyse hydrogen bonds with a single line of code.
+- Customise hydrogen bond parameters or atom indices for detailed and specific analysis.
 - Track structural parameters to understand the nature and stability of hydrogen bonds in your system.
 
 ### 5. Coordination Analysis
@@ -45,11 +45,17 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 ### 6. Error Analysis
 - Accurately estimate the error of any computed property using statistical techniques.
 - Choose between autocorrelation function or block averaging to calculate the error of the mean, improving result reliability.
-- Assess simulation convergence by analyzing vector or scalar properties like atomic positions or energy.
+- Assess simulation convergence by analysing vector or scalar properties like atomic positions or energy.
 
 ### 7. Efficient and Robust Sampling
 - Sample structures using Furthest Point Sampling (FPS) with SOAP descriptors.
 - Efficiently subsample large databases or simulations by selecting the most diverse structures while avoiding redundancy.
+- 
+
+### 7. Volumetric Density
+- Create 3D volumetric density maps to visualise the spatial distribution of atoms throughout a trajectory
+- Understanding diffusion pathways, adsorption sites etc.  
+
 
 
 # Requirements
@@ -57,10 +63,10 @@ This package is built around the ASE (Atomic Simulation Environment) and thus re
 
 The clustering uses DBSCAN (Density-Based Spatial Clustering of Applications with Noise) implemented by scikit-learn, available at: [scikit-learn Installation](https://scikit-learn.org/stable/install.html).
 
-For interactive 3D plots of clustering, CRISP utilizes the seaborn package. Ensure you have seaborn installed by following the instructions at: [Seaborn Installation](https://seaborn.pydata.org/installing.html).
+For interactive 3D plots of clustering, CRISP utilises the seaborn package. Ensure you have seaborn installed by following the instructions at: [Seaborn Installation](https://seaborn.pydata.org/installing.html).
 
 # Installation
-1. Now for the testing period, just pull the folder to the local drive, and then go inside the "CRISP" folder locally inside the terminal. 
+1. Now, for the testing period, just pull the folder to the local drive, and then go inside the "CRISP" folder locally inside the terminal. 
 
 2. In the same terminal type    
 ```
