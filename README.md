@@ -4,7 +4,7 @@ CRISP
 [![Documentation Status](https://readthedocs.org/projects/crisp-host/badge/?version=latest)](https://crisp-host.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/CRISP.svg)](https://badge.fury.io/py/CRISP)
 [![Python Version](https://img.shields.io/pypi/pyversions/CRISP.svg)](https://pypi.org/project/CRISP/)
-[![License](https://img.shields.io/github/license/Indranil17/CRISP_HOST.svg)](https://github.com/Indranil17/CRISP_HOST/blob/main/LICENSE)
+[![License](https://github.com/Indranil17/CRISP_HOST/tree/main?tab=MIT-1-ov-file)
 [![DOI](https://zenodo.org/badge/DOI/YOUR_DOI.svg)](https://doi.org/YOUR_DOI)
 
 
