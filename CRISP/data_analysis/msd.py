@@ -571,6 +571,12 @@ def calculate_save_msd(traj_path, timestep_fs, indices_path=None,
     tuple or dict
         MSD values and corresponding time values
     """
+    if not os.path.exists(traj_path):
+        raise FileNotFoundError(f"Trajectory file not found: {traj_path}")
+    
+    if indices_path is not None and not os.path.exists(indices_path):
+        raise FileNotFoundError(f"Indices file not found: {indices_path}")
+
     try:
         traj = ase.io.read(traj_path, index=f'::{frame_skip}')
         if not isinstance(traj, list):
