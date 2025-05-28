@@ -42,6 +42,7 @@ mock_modules = [
     'statsmodels',
     'plotly',
     'plotly.graph_objects',
+    'plotly.io',
     'plotly.subplots', 
     'networkx',
     'matplotlib',
