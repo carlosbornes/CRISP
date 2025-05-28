@@ -18,7 +18,20 @@ import sys
 # sys.path.insert(0, os.path.abspath('/mnt/c/Users/sahaC/Desktop/side_project/molssi_best_practices/CRISP'))
 sys.path.insert(0, os.path.abspath('..'))
 
+# Mock dependencies before importing CRISP
+from unittest.mock import MagicMock
 
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+# Mock the problematic modules
+sys.modules['fpsample'] = Mock()
+sys.modules['dscribe'] = Mock()
+sys.modules['dscribe.descriptors'] = Mock()
+
+# NOW it's safe to import CRISP
 import CRISP
 
 
@@ -55,6 +68,7 @@ extensions = [
     'sphinx_copybutton',    
 ]
 
+# This is for autodoc, but we also need the manual mocking above
 autodoc_mock_imports = [
     'fpsample',
     'dscribe',
