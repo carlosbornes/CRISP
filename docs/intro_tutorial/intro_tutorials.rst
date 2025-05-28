@@ -857,11 +857,12 @@ The volumetric density analysis provides comprehensive visualization of atomic d
   - With projections: 2D cross-sectional views (XY, YZ, XZ) for detailed analysis
   - Without projections: Clean 3D view with static framework atoms visible
 
-This analysis is particularly valuable for:
-- Identifying preferred locations of mobile species in zeolite frameworks
-- Understanding diffusion pathways and bottlenecks
-- Visualizing guest molecule distribution patterns
-- Analyzing adsorption sites and their accessibility
+
+This analysis is particularly valuable for understanding:
+ - Identifying preferred locations of mobile species in zeolite frameworks
+ - Understanding diffusion pathways and bottlenecks
+ - Visualizing guest molecule distribution patterns
+ - Analyzing adsorption sites and their accessibility
 
 Example Jupyter Notebooks
 ---------------------------
