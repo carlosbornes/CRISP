@@ -1,92 +1,23 @@
 # -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
-#
-# This file does only contain a selection of the most common options. For a
-# full list see the documentation:
-# http://www.sphinx-doc.org/en/stable/config
 
 # -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-
-# Incase the project was not installed
 import os
 import sys
-# sys.path.insert(0, os.path.abspath('/mnt/c/Users/sahaC/Desktop/side_project/molssi_best_practices/CRISP'))
 sys.path.insert(0, os.path.abspath('..'))
 
-# Mock dependencies before importing CRISP
-from unittest.mock import MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return MagicMock()
-
-# Mock ALL the problematic modules that might be imported
-mock_modules = [
-    'fpsample',
-    'dscribe',
-    'dscribe.descriptors',
-    'ase',
-    'ase.data',
-    'ase.io', 
-    'ase.units',  # Add this specific submodule
-    'ase.visualize',
-    'sklearn',
-    'sklearn.cluster',
-    'seaborn',
-    'joblib',
-    'statsmodels',
-    'plotly',
-    'plotly.graph_objects',
-    'plotly.io',
-    'plotly.subplots', 
-    'networkx',
-    'matplotlib',
-    'matplotlib.pyplot',
-    'matplotlib.animation',
-    'numpy',
-    'scipy',
-    'scipy.optimize',
-    'pandas'
-]
-
-for mod_name in mock_modules:
-    sys.modules[mod_name] = Mock()
-
-# Also create the fs attribute specifically for ase.units
-if 'ase.units' in sys.modules:
-    sys.modules['ase.units'].fs = MagicMock()
-
-# NOW it's safe to import CRISP
-import CRISP
-
+# DON'T import CRISP here - let autodoc handle it
 
 # -- Project information -----------------------------------------------------
-
 project = 'CRISP'
 copyright = '2024, Indranil Saha, Daniel Willimetz, Lukas Grajciar, '
 author = 'Indranil Saha, Daniel Willimetz '
 
-# The short X.Y version
 version = ''
-# The full version, including alpha/beta/rc tags
 release = ''
 
-
 # -- General configuration ---------------------------------------------------
-
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.autodoc',
@@ -99,25 +30,42 @@ extensions = [
     'sphinx_copybutton',    
 ]
 
-# This is for autodoc, but we also need the manual mocking above
+# Let autodoc handle all the mocking
 autodoc_mock_imports = [
     'ase',
     'ase.io', 
     'ase.units',
     'ase.data',
+    'ase.visualize',
     'numpy',
     'matplotlib',
     'matplotlib.pyplot',
+    'matplotlib.animation',
     'scipy',
     'scipy.optimize',
+    'scipy.stats',
+    'scipy.spatial',
     'pandas',
     'joblib',
     'fpsample',
     'dscribe',
+    'dscribe.descriptors',
     'sklearn',
+    'sklearn.cluster',
+    'sklearn.metrics',
+    'sklearn.decomposition',
+    'sklearn.preprocessing',
+    'sklearn.model_selection',
+    'sklearn.ensemble',
+    'sklearn.linear_model',
     'seaborn',
     'statsmodels',
+    'statsmodels.api',
+    'statsmodels.tsa',
     'plotly',
+    'plotly.graph_objects',
+    'plotly.io',
+    'plotly.subplots',
     'networkx'
 ]
 
