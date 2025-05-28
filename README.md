@@ -81,7 +81,7 @@ pip install joblib statsmodels IPython pandas scikit-learn plotly seaborn jupyte
 # Current Modules
 
 To learn how to use each of the modules, please visit [examples](https://github.com/Indranil17/CRISP_HOST/tree/main/example).
-Inside the example folder, check the [Notebook](https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb) to see them in use and also check the other folders of the example folder to see the outputs.
+Inside the example folder, check the [Notebook](https://github.com/Indranil17/CRISP_HOST/blob/main/example/Introductory_Tutorial/CRISP_Introdcutory_Tutorial.ipynb) to see them in use and also check the other folders of the example folder to see the outputs.
 It has two sub-packages and ten modules.  
 Please see the package's UML map below. 
  
