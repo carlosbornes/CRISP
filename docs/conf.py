@@ -32,6 +32,7 @@ mock_modules = [
     'dscribe',
     'dscribe.descriptors',
     'ase',
+    'ase.data',
     'ase.io', 
     'ase.visualize',
     'sklearn',
