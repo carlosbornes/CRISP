@@ -34,6 +34,7 @@ mock_modules = [
     'ase',
     'ase.data',
     'ase.io', 
+    'ase.units',  # Add this specific submodule
     'ase.visualize',
     'sklearn',
     'sklearn.cluster',
@@ -47,11 +48,19 @@ mock_modules = [
     'networkx',
     'matplotlib',
     'matplotlib.pyplot',
-    'matplotlib.animation'
+    'matplotlib.animation',
+    'numpy',
+    'scipy',
+    'scipy.optimize',
+    'pandas'
 ]
 
 for mod_name in mock_modules:
     sys.modules[mod_name] = Mock()
+
+# Also create the fs attribute specifically for ase.units
+if 'ase.units' in sys.modules:
+    sys.modules['ase.units'].fs = MagicMock()
 
 # NOW it's safe to import CRISP
 import CRISP
@@ -102,7 +111,14 @@ autodoc_mock_imports = [
     'scipy',
     'scipy.optimize',
     'pandas',
-    'joblib'
+    'joblib',
+    'fpsample',
+    'dscribe',
+    'sklearn',
+    'seaborn',
+    'statsmodels',
+    'plotly',
+    'networkx'
 ]
 
 autosummary_generate = True
