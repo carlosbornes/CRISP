@@ -70,13 +70,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          git+https://github.com/leonardodalinky/fpsample.git
           pip install -r docs/requirements.txt
           pip install -e .
       
       - name: Debug - Check installed packages
         run: |
-          git+https://github.com/leonardodalinky/fpsample.git
           pip list | grep fpsample
           python -c "import fpsample; print('fpsample imported successfully')"
       
