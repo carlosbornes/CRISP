@@ -8,7 +8,7 @@ numerous successful projects, particularly in the fields of physical chemistry,
 and materials science. However, when it comes to post‐simulation analysis—especially
 for analyzing diverse simulation trajectories—existing tools often fall short.
 
-CRISP (**C**\ lustering, **R**\ adial, and other **I**\ nsightful **S**\ imulation **P**\ ost-processing) 
+CRISP (**C**\ omprehensive **R**\ epository for **I**\ nsightful **S**\ imulation **P**\ ost-processing) 
 aims to fill this
 gap by offering a seamless workflow from simulation to analysis, enabling researchers 
 to extract meaningful insights without juggling multiple scripts. It's features are,

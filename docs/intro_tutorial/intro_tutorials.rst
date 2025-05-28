@@ -34,7 +34,7 @@ making it easier to analyze specific subsets within your simulation data.
 
    .. code:: python
 
-       from CRISP.simulation_utility.atomic_indices import atom_indices, run_atom_indices
+       from CRISP.simulation_utility.atomic_indices import run_atom_indices
 
        # Path to your ASE trajectory file
        file_path = "./wrapped_traj.traj"
@@ -42,25 +42,26 @@ making it easier to analyze specific subsets within your simulation data.
        # Output folder to save the indices
        output_folder = './indices_new/'
 
-       # Define the cutoffs dictionary 
-       cutoffs = {
+       # Define the custom cutoffs dictionary 
+       custom_cutoffs = {
            ("O", "H"): 1.2,
            ("Si", "O"): 1.8,
            ("Al", "Si"): 3.2,
-           ("O", "O"): 3.0,
+           ("O", "O"): 3.0
        }
 
        # Run the atom_indices function and save the results with a specific frame index
-       run_atom_indices(file_path, output_folder, frame_index=2, cutoffs=cutoffs)
+       run_atom_indices(file_path, output_folder, frame_index=10, custom_cutoffs=custom_cutoffs)
 
    **Output:**
 
    .. code-block:: text
 
+       Analyzing frame with index 10 (out of 21 frames)
+       Length of O indices: 432
        Length of H indices: 120
        Length of Si indices: 168
        Length of Al indices: 24
-       Length of O indices: 432
        Outputs saved.
        Saved cutoff indices for O-H to ./indices_new/cutoff/O-H_cutoff.csv
        Saved cutoff indices for Si-O to ./indices_new/cutoff/Si-O_cutoff.csv
@@ -75,21 +76,24 @@ Visualize atomic trajectories in 3D to understand motion and structural changes.
 .. code:: python
 
     from CRISP.simulation_utility.atomic_traj_linemap import plot_atomic_trajectory
-    import numpy as np
 
     # Path to trajectory file
-    traj_path = "./wrapped_traj.traj"
+    traj_file = "./wrapped_traj.traj"
     
-    # Load atom indices for visualization
-    oxygen_indices = np.load("./indices_detailed/ex_fram_ox.npy")
+    # Output directory for the visualization
+    output_dir = "./atomic_traj_linemap/o593_atom_trajectory.html"
+    
+    # Select specific atom for trajectory analysis
+    selected_atoms = [593]
     
     # Generate interactive 3D visualization of trajectories
-    plot_atomic_trajectory(
-        traj_path=traj_path,
-        selected_indices=oxygen_indices,
-        output_path="oxygen_trajectories.html",
-        frame_skip=10,
-        plot_title="Oxygen Atom Trajectories",
+    fig = plot_atomic_trajectory(
+        traj_path=traj_file, 
+        indices_path=selected_atoms,
+        output_dir=output_dir,
+        frame_skip=1,
+        plot_title="Oxygen Atom Movement Analysis",
+        atom_size_scale=1.2,
         show_plot=True
     )
 
@@ -99,21 +103,23 @@ Visualize atomic trajectories in 3D to understand motion and structural changes.
 
     Loading trajectory from ./wrapped_traj.traj (using every 1th frame)...
     Loaded 21 frames from trajectory
-    Selected 1 atoms for trajectory plotting: [593]
+    Using 1 directly provided atom indices for trajectory plotting
     Simulation box dimensions: [24.34499931 24.34499931 24.34499931] Å
     Analyzing atom types in first frame (total atoms: 744, max index: 743)...
     Found 4 atom types: Si, Al, O, H
-    Plot has been saved to ./atomic_traj_linemap/o_atom_trajectory.html
+    Plot has been saved to ./atomic_traj_linemap/o593_atom_trajectory.html/trajectory_plot.html
 
 **Visualisation Output:**
 
 .. raw:: html
-   :file: ../images/introductory_tutorials/o_atom_trajectory.html
+   :file: ../images/introductory_tutorials/atomic_traj_linemap/o593_atom_trajectory.html/trajectory_plot.html
 
 This interactive 3D visualization allows you to:
 
 - Rotate, zoom, and pan to explore atomic trajectories
 - Track the movement of selected atoms over time
+- Visualize the trajectory path with customizable atom sizes
+- Understand atomic motion patterns within the simulation box
 
 Subsampling
 ^^^^^^^^^^^^^^^^
@@ -124,13 +130,13 @@ Extract representative structures from a trajectory using Farthest Point Samplin
 
     from CRISP.simulation_utility.subsampling import subsample
     
-    # Path to trajectory file
+    # Extract representative structures from trajectory
     all_frames = subsample(
-        filename="./Subsmapling/local_minima.traj",
-        n_samples=30,
+        traj_path="./wrapped_traj.traj",
+        n_samples=10,
         index_type="all",
         file_format="traj",
-        skip=10,
+        frame_skip=1,
         plot_subsample=True,
         output_dir="./Subsmapling"
     )
@@ -142,7 +148,7 @@ Extract representative structures from a trajectory using Farthest Point Samplin
 .. code-block:: text
 
    Saved convergence plot to ./Subsmapling/subsampled_convergence.png
-   Saved 30 subsampled structures to ./Subsmapling/subsample_local_minima.traj
+   Saved 10 subsampled structures to ./Subsmapling/subsample_wrapped_traj.traj
 
 **Visualisation Output:**
 
@@ -302,11 +308,11 @@ CRISP provides tools to analyze both coordination environments and dynamic conta
 
 **Visualization Output:**
 
-.. image:: ../images/introductory_tutorials/CN_distribution.png
+.. image:: ../images/introductory_tutorials/CN_data/CN_distribution.png
    :width: 600
    :alt: Coordination distribution analysis
 
-.. image:: ../images/introductory_tutorials/CN_time_series.png
+.. image:: ../images/introductory_tutorials/CN_data/CN_time_series.png
    :width: 600
    :alt: Coordination number time series
 
@@ -355,15 +361,15 @@ the simulation trajectory.
 
 **Visualization Output:**
 
-.. image:: ../images/introductory_tutorials/average_contact_analysis.png
+.. image:: ../images/introductory_tutorials/Contacts_data/average_contact_analysis.png
    :width: 600
    :alt: Average contact analysis
 
-.. image:: ../images/introductory_tutorials/contact_distance_heatmap.png
+.. image:: ../images/introductory_tutorials/Contacts_data/contact_distance_heatmap.png
    :width: 600
    :alt: Contact distance heatmap
 
-.. image:: ../images/introductory_tutorials/contact_time_heatmap.png
+.. image:: ../images/introductory_tutorials/Contacts_data/contact_time_heatmap.png
    :width: 600
    :alt: Contact time heatmap
 
@@ -386,8 +392,8 @@ Analyze hydrogen bond networks and dynamics in your simulation.
     
     # Perform hydrogen bond analysis
     h_bonds_both_plots = hydrogen_bonds(
-        filename="./wrapped_traj.traj",
-        skip_frames=1,
+        traj_path="./wrapped_traj.traj",
+        frame_skip=1,
         acceptor_atoms=["O"],
         angle_cutoff=120,
         mic=True,
@@ -416,30 +422,31 @@ Analyze hydrogen bond networks and dynamics in your simulation.
 
 **Visualization Output:**
 
-.. image:: ../images/introductory_tutorials/h_bond_count.png
+.. image:: ../images/introductory_tutorials/H_Bond_Data/h_bond_count.png
    :width: 600
    :alt: Hydrogen bond count over time
 
-.. image:: ../images/introductory_tutorials/h_bond_structure.png
+.. image:: ../images/introductory_tutorials/H_Bond_Data/h_bond_structure.png
    :width: 600
    :alt: Hydrogen bond structure heatmap
 
 .. raw:: html
-   :file: ../images/introductory_tutorials/hbond_network_frame_10.html
+   :file: ../images/introductory_tutorials/H_Bond_Data/hbond_network_frame_10.html
 
 .. raw:: html
-   :file: ../images/introductory_tutorials/hbond_correlation_matrix_frame_10.html
+   :file: ../images/introductory_tutorials/H_Bond_Data/hbond_correlation_matrix_frame_10.html
 
 The hydrogen bond analysis provides multiple complementary visualizations:
 
-- Time series of hydrogen bond counts throughout the trajectory
-- Heatmap showing hydrogen bond structure and persistence over time
-- Interactive network graph showing hydrogen bonding patterns for a specific frame (frame 10)
-- Correlation matrix visualizing the strength and frequency of hydrogen bonds between specific atoms
+- **Time series** of hydrogen bond counts throughout the trajectory
+- **Heatmap** showing hydrogen bond structure and persistence over time
+- **Interactive network graph** showing hydrogen bonding patterns for a specific frame (frame 10)
+- **Correlation matrix** visualizing the strength and frequency of hydrogen bonds between specific atoms
 
 These visualizations work together to provide a comprehensive understanding of hydrogen bonding networks, 
 enabling both qualitative pattern recognition through the network graph and quantitative analysis 
-through the correlation matrix.
+through the correlation matrix. The analysis identified 196 unique donor/acceptor atom pairs and 
+provides both frame-specific and time-averaged hydrogen bonding information.
 
 Radial Distribution Function (RDF)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -487,12 +494,12 @@ Perform Radial Distribution Function analysis to investigate spatial relationshi
 
 **Visualization Output:**
 
-.. image:: ../images/introductory_tutorials/rdf_total_plot.png
+.. image:: ../images/introductory_tutorials/RDF/rdf_total_plot.png
    :width: 600
    :alt: Radial Distribution Function plot
 
 .. raw:: html
-   :file: ../images/introductory_tutorials/rdf_total_animation.html
+   :file: ../images/introductory_tutorials/RDF/rdf_total_animation.html
 
 The RDF analysis provides both static and interactive visualizations:
 
@@ -513,32 +520,30 @@ Step 1: Calculate MSD values from trajectory
 .. code:: python
 
     from CRISP.data_analysis.msd import calculate_save_msd
-    import numpy as np
     
     # Path to trajectory and indices files
     traj_file = "./SiAl15/nvt.traj"
     indices_file = "./SiAl15/indices_needed/ex_fram_ox.npy"
-    timestep = 50.0 * 100  # fs
+    timestep = 50 * 10  # fs
     
     # Calculate MSD values and save to CSV
     msd_values, msd_times = calculate_save_msd(
-        traj_file=traj_file,
-        timestep_value=timestep,
-        indices_file=indices_file,
+        traj_path=traj_file,
+        timestep_fs=timestep,
+        indices_path=indices_file,
         output_file="msd_results.csv",
-        frame_skip=100
+        frame_skip=10
     )
 
 **Output:**
 
 .. code-block:: text
 
-    Loaded full trajectory with 22000 frames
-    Using 220 frames after skipping every 100 frames
+    Loaded 2200 frames after applying frame_skip=10
     Loaded 72 atom indices
-    Using adjusted timestep: 50902.52835578362 * fs (original: 50902.52835578362 * fs)
-    Calculating MSD...
-    MSD data has been saved to msd_results.csv
+    Using timestep: 500 fs
+    Calculating MSD using parallel processing...
+    MSD data has been saved to traj_csv_detailed/msd_results.csv
 
 Step 2: Analyze MSD data and calculate diffusion coefficient
 **************************************************************
@@ -549,39 +554,53 @@ Step 2: Analyze MSD data and calculate diffusion coefficient
     import pandas as pd
     
     # Load the MSD data CSV file
-    df = pd.read_csv("msd_results.csv")
+    df = pd.read_csv("./traj_csv_detailed/msd_results.csv")
     print(f"Total data points in file: {len(df)}")
     
     # Calculate diffusion coefficient from MSD data
     D, error = analyze_from_csv(
-        csv_file="msd_results.csv",
+        csv_file="./traj_csv_detailed/msd_results.csv",
         fit_start=0,
         fit_end=len(df),  
         with_intercept=True,
-        plot_msd=True
+        plot_msd=True,
+        plot_diffusion=True,
+        n_blocks=5
     )
 
 **Output:**
 
 .. code-block:: text
 
-    Total data points in file: 220
-    Loaded MSD data from msd_results.csv
-    Diffusion Coefficient: 2.82e-11 cm²/s
-    Error: 7.22e-13 cm²/s
+    Total data points in file: 2200
+    Loaded MSD data from ./traj_csv_detailed/msd_results.csv
+    Diffusion Coefficient: 4.77e-07 cm²/s
+    Error in the Fit: 3.80e-09 cm²/s
+    Diffusion coefficient evolution plot saved to: ./traj_csv_detailed/msd_results_3D_diffusion_evolution.png
+    MSD Analysis Results (Standard Fit):
+    Diffusion Coefficient: D = 4.7665e-07 ± 3.8004e-09 cm²/s (0.8%)
 
 **Visualization Output:**
 
-.. image:: ../images/introductory_tutorials/msd_plot.png
+.. image:: ../images/introductory_tutorials/msd_analysis.png
    :width: 600
    :alt: Mean Square Displacement plot
 
-The MSD analysis provides quantitative information about particle diffusion, including:
- - Diffusion coefficient (D) in cm²/s with statistical error
- - Visual representation of MSD vs. time with linear fit
+.. image:: ../images/introductory_tutorials/traj_csv_detailed/msd_results_3D_diffusion_evolution.png
+   :width: 600
+   :alt: Diffusion coefficient evolution plot
+
+The MSD analysis provides comprehensive quantitative information about particle diffusion:
+
+- **Diffusion coefficient (D)**: 4.77e-07 cm²/s with statistical error (3.80e-09 cm²/s)
+- **Relative error**: 0.8%, indicating high precision in the measurement
+- **Visual representation**: MSD vs. time with linear fit showing the diffusive behavior
+- **Evolution plot**: 3D visualization showing how the diffusion coefficient converges over different time windows
 
 This two-step approach allows for efficient analysis of large trajectories by first extracting 
-the MSD data and then performing analysis without reprocessing the trajectory.
+the MSD data and then performing detailed statistical analysis without reprocessing the trajectory. 
+The block analysis (n_blocks=5) provides additional confidence in the diffusion coefficient measurement 
+by examining its convergence behavior.
 
 Clustering Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -595,7 +614,7 @@ Analyze clusters in a specific frame of your trajectory:
 
 .. code:: python
 
-    from CRISP.data_analysis.clustering import StructureAnalyzer
+    from CRISP.data_analysis.clustering import analyze_frame
     import numpy as np
     import os
 
@@ -606,16 +625,16 @@ Analyze clusters in a specific frame of your trajectory:
     # Clustering parameters
     threshold = 3.0
     min_samples = 3
-    output_dir = "SiAl15_clustering"
+    output_dir = "SiAl15_Frame_clustering"
 
     os.makedirs(output_dir, exist_ok=True)
 
     # Load atom indices
     atom_indices = np.load(indices_file)
 
-    # Create analyzer instance
-    analyzer = StructureAnalyzer(
-        traj_file=traj_file,
+    # Create analyzer instance and perform clustering
+    analyzer = analyze_frame(
+        traj_path=traj_file,
         atom_indices=atom_indices,
         threshold=threshold,
         min_samples=min_samples,
@@ -630,8 +649,8 @@ Analyze clusters in a specific frame of your trajectory:
 
 .. code-block:: text
 
-    Saving results to directory: SiAl15_clustering
-    3D visualization saved to SiAl15_clustering/nvt_clusters.html
+    Saving results to directory: SiAl15_Frame_clustering
+    3D visualization saved to SiAl15_Frame_clustering/nvt_clusters.html
 
     Number of Clusters: 10
     Number of Outliers: 9
@@ -648,13 +667,13 @@ Analyze clusters in a specific frame of your trajectory:
       Cluster 7: 4 points
       Cluster 8: 4 points
       Cluster 9: 3 points
-    Detailed frame data saved to: SiAl15_clustering/frame_data.txt
-    Full analysis data saved to: SiAl15_clustering/single_frame_analysis.pkl
+    Detailed frame data saved to: SiAl15_Frame_clustering/frame_data.txt
+    Full analysis data saved to: SiAl15_Frame_clustering/single_frame_analysis.pkl
 
 **Visualization Output:**
 
 .. raw:: html
-   :file: ../images/introductory_tutorials/nvt_clusters.html
+   :file: ../images/introductory_tutorials/SiAl15_Frame_clustering/nvt_clusters.html
 
 The 3D visualization shows the spatial distribution of clusters in the selected frame, with each cluster 
 represented by a different color and unclustered atoms shown separately.
@@ -677,19 +696,19 @@ Analyze clusters throughout a trajectory to observe their evolution:
     # Clustering parameters
     threshold = 3.0
     min_samples = 3
-    skip_frames = 1000  # Analyze every 1000th frame
-    output_dir = "SiAl15_traj_analysis"
+    skip_frames = 10  # Analyze every 10th frame
+    output_dir = "SiAl15_Traj_clustering"
     output_prefix = "SiAl15_traj_clusters"
 
     os.makedirs(output_dir, exist_ok=True)
 
     # Analyze trajectory
     analysis_results = analyze_trajectory(
-        trajectory_path=traj_file,
-        atom_indices_path=indices_file,
+        traj_path=traj_file,
+        indices_path=indices_file,
         threshold=threshold,
         min_samples=min_samples,
-        skip_frames=skip_frames,
+        frame_skip=skip_frames,
         output_dir=output_dir,
         save_html_visualizations=True  # Save HTML visualizations of first and last frames
     )
@@ -707,25 +726,142 @@ Analyze clusters throughout a trajectory to observe their evolution:
 
 .. code-block:: text
 
-    Per-frame data saved to: SiAl15_traj_analysis/nvt_frame_data.txt
-    3D visualization saved to SiAl15_traj_analysis/nvt_first_frame_clusters.html
-    3D visualization saved to SiAl15_traj_analysis/nvt_last_frame_clusters.html
-    Analysis results saved to directory: SiAl15_traj_analysis
+    Loaded 72 atoms for clustering from ./SiAl15/indices_needed/ex_fram_ox.npy
+    Loading trajectory from ./SiAl15/nvt.traj (using every 100th frame)...
+    Loaded 220 frames from trajectory
+    Analyzing 220 frames...
+    3D visualization saved to SiAl15_Traj_clustering/first_frame_clusters.html
+    3D visualization saved to SiAl15_Traj_clustering/last_frame_clusters.html
+    Trajectory analysis complete: 220 frames processed
+    Analysis results saved to directory: SiAl15_Traj_clustering
+    Analysis plot saved to: SiAl15_Traj_clustering/SiAl15_traj_clusters_plot.png
 
 **Visualization Output:**
 
-.. image:: ../images/introductory_tutorials/SiAl15_traj_clusters_plot.png
+.. image:: ../images/introductory_tutorials/SiAl15_Traj_clustering/SiAl15_traj_clusters_plot.png
    :width: 600
    :alt: Evolution of clusters over time
 
-The trajectory-based clustering visualization shows the evolution of clusters over time, including:
- - Number of clusters detected at each frame
- - Average cluster size throughout the trajectory
- - Distribution of cluster sizes
- - Temporal changes in clustering patterns
+.. raw:: html
+   :file: ../images/introductory_tutorials/SiAl15_Traj_clustering/first_frame_clusters.html
 
-These analyses are particularly valuable for studying nucleation processes, phase transitions,
-and self-assembly phenomena in molecular dynamics simulations.
+.. raw:: html
+   :file: ../images/introductory_tutorials/SiAl15_Traj_clustering/last_frame_clusters.html
+
+The trajectory-based clustering analysis provides comprehensive insights into cluster evolution:
+
+- **Temporal Evolution**: Analysis of 220 frames (every 100th frame) showing how clusters change over time
+- **72 Atoms Analyzed**: Focused analysis on oxygen atoms from the framework
+- **Comparative Visualizations**: Interactive 3D plots of first and last frames showing structural changes
+- **Statistical Summary**: Evolution plot tracking cluster statistics throughout the trajectory
+
+This analysis is particularly valuable for understanding:
+ - Long-term structural stability and reorganization
+ - Phase transitions and nucleation events
+ - Self-assembly processes in molecular dynamics simulations
+ - Framework flexibility and dynamic behavior in zeolite-like materials
+
+The combination of temporal analysis with 3D visualizations provides both quantitative metrics 
+and qualitative insights into the clustering behavior of atoms throughout the simulation.
+
+Volumetric Density
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Create 3D volumetric density maps to visualize the spatial distribution of atoms throughout a trajectory.
+
+.. code:: python
+
+    from CRISP.data_analysis.volumetric_atomic_density import create_density_map
+    import os
+
+    # Path to trajectory and indices files
+    traj_file = "./SiAl15/nvt.traj"
+    indices_file = "./SiAl15/indices_needed/ex_fram_ox.npy"
+
+    projection_options = [True, False]
+
+    for show_projections in projection_options:
+        output_dir = "./SiAl15_Density"
+        os.makedirs(output_dir, exist_ok=True)
+
+        proj_text = "with_projections" if show_projections else "no_projections"
+        output_file = f"SiAl15_density_{proj_text}.html"
+
+        create_density_map(
+            traj_path=traj_file,  
+            indices_path=indices_file,  
+            frame_skip=100,
+            threshold=0.0,
+            opacity=0.8,
+            absolute_threshold=False,
+            save_density=True,
+            omit_static_indices=indices_file,  
+            show_projections=show_projections,
+            projection_opacity=0.8,
+            save_projection_images=show_projections,  
+            output_dir=output_dir,  
+            output_file=output_file
+        )
+
+
+**Output:**
+
+.. code-block:: text
+
+    Loading trajectory from ./SiAl15/nvt.traj (using every 100th frame)...
+    Loaded 220 frames, 72 selected indices
+    Extracting selected atom positions from trajectory...
+    Creating density grid...
+    Density data saved to: ./SiAl15_Density/nvt_density_data.npz
+    Creating visualization with relative threshold=0.0, opacity=0.8
+    Density range: 0.0 to 29.0 counts
+    Adding 2D projections of density data...
+    XY projection saved to: ./SiAl15_Density/SiAl15_density_with_projections_xy_projection.png
+    YZ projection saved to: ./SiAl15_Density/SiAl15_density_with_projections_yz_projection.png
+    XZ projection saved to: ./SiAl15_Density/SiAl15_density_with_projections_xz_projection.png
+    Skipping atom visualization since projections are enabled
+    Visualization saved as HTML file: ./SiAl15_Density/SiAl15_density_with_projections.html
+    Loading trajectory from ./SiAl15/nvt.traj (using every 100th frame)...
+    Loaded 220 frames, 72 selected indices
+    Extracting selected atom positions from trajectory...
+    Creating density grid...
+    Density data saved to: ./SiAl15_Density/nvt_density_data.npz
+    Creating visualization with relative threshold=0.0, opacity=0.8
+    Density range: 0.0 to 29.0 counts
+    Omitting 72 custom indices from static structure visualization
+    Visualization saved as HTML file: ./SiAl15_Density/SiAl15_density_no_projections.html
+
+**Visualization Output:**
+
+.. raw:: html
+   :file: ../images/introductory_tutorials/SiAl15_Density/SiAl15_density_no_projections.html
+
+.. image:: ../images/introductory_tutorials/SiAl15_Density/SiAl15_density_with_projections_xy_projection.png
+   :width: 250
+   :alt: XY projection of density
+
+.. image:: ../images/introductory_tutorials/SiAl15_Density/SiAl15_density_with_projections_yz_projection.png
+   :width: 250
+   :alt: YZ projection of density
+
+.. image:: ../images/introductory_tutorials/SiAl15_Density/SiAl15_density_with_projections_xz_projection.png
+   :width: 250
+   :alt: XZ projection of density
+
+The volumetric density analysis provides comprehensive visualization of atomic distribution:
+
+- **3D Density Maps**: Interactive volumetric visualizations showing where oxygen atoms are most frequently located
+- **220 Frames Analyzed**: Statistical sampling using every 100th frame for robust density calculations
+- **72 Oxygen Atoms**: Focused analysis on extra-framework oxygen atoms
+- **Dual Visualization Modes**: 
+  - With projections: 2D cross-sectional views (XY, YZ, XZ) for detailed analysis
+  - Without projections: Clean 3D view with static framework atoms visible
+
+This analysis is particularly valuable for:
+- Identifying preferred locations of mobile species in zeolite frameworks
+- Understanding diffusion pathways and bottlenecks
+- Visualizing guest molecule distribution patterns
+- Analyzing adsorption sites and their accessibility
 
 Example Jupyter Notebooks
 ---------------------------
@@ -733,7 +869,7 @@ Example Jupyter Notebooks
 For detailed examples and interactive tutorials, refer to the Jupyter notebooks included in the package:
 
 - **Basic Usage Examples**: 
-  `https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_latest_example.ipynb`
+  `https://github.com/Indranil17/CRISP_HOST/blob/main/example/CRISP_Introdcutory_Tutorial.ipynb`
 
 
 These notebook provide step-by-step examples with visualizations to help you understand how to use CRISP effectively.

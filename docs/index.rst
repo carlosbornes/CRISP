@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to CRISP's documentation! (Under development)
+Welcome to CRISP's documentation!
 =========================================================
 CRISP is a post-simulation analysis package built on the 
 foundation of Atomic Simulation Environment (ASE). 
@@ -22,7 +22,7 @@ https://github.com/Nanomaterials-Modelling-Group-Prague
       
       Learn the basics of using CRISP.
 
-      .. button-link:: ./Introduction.html
+      .. button-link:: ./introduction.html
          :color: primary
          :outline:
          :expand:
@@ -36,7 +36,7 @@ https://github.com/Nanomaterials-Modelling-Group-Prague
       
       Learn the basics of using CRISP.
 
-      .. button-link:: ./Installation.html
+      .. button-link:: ./installation.html
          :color: primary
          :outline:
          :expand:
@@ -62,7 +62,7 @@ https://github.com/Nanomaterials-Modelling-Group-Prague
       
       How to contribute to CRISP.
 
-      .. button-link:: ./Tutorials.html
+      .. button-link:: ./tutorials.html
          :color: primary
          :outline:
          :expand:

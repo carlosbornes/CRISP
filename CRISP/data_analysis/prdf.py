@@ -67,7 +67,9 @@ def compute_pairwise_rdf(atoms: Atoms,
     nbins : int
         Number of bins for histogram
     volume : float, optional
-        System volume (calculated from atoms if None)
+        Custom normalization volume to use instead of cell volume.
+        Useful for non-periodic systems or custom normalization.
+        (default: None, uses atoms.get_volume())
         
     Returns
     -------
@@ -96,7 +98,7 @@ def compute_pairwise_rdf(atoms: Atoms,
         N_A = len(ref_indices)
         N_B = len(target_indices)
         
-        norm = 4 * math.pi * dr * (N_A / volume) * N_total
+        norm = 4 * math.pi * dr * (N_A / volume) * N_B
 
     hist, bin_edges = np.histogram(distances, bins=nbins, range=(0, rmax))
     bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
@@ -206,38 +208,31 @@ def plot_rdf(x_data_all, y_data_all, title=None, output_file=None):
     -------
     None
     """
-    # Calculate average RDF across all frames
+    # Average RDF across all frames
     y_data_avg = np.mean(y_data_all, axis=0)
 
-    # Find the index of the maximum y value in the average RDF
+    # Index of the maximum y value in the average RDF
     max_y_index = np.argmax(y_data_avg)
     max_y_x = x_data_all[max_y_index]
     max_y = y_data_avg[max_y_index]
 
-    # Create figure and set style
     plt.figure(figsize=(10, 6))
     
-    # Plot the average RDF
     plt.plot(x_data_all, y_data_avg, linewidth=2, label='Average RDF')
     
-    # Add a vertical dashed line for the maximum y value (keep this)
     plt.axvline(x=max_y_x, color='red', linestyle='--', label=f'Peak at {max_y_x:.2f} Å')
     
-    # Add labels and title
     plt.xlabel('Distance (Å)', fontsize=12)
     plt.ylabel('g(r)', fontsize=12)
     plt.title(title or 'Average Radial Distribution Function', fontsize=14)
 
-    # Add grid and legend
     plt.grid(True, alpha=0.3)
     plt.legend(fontsize=10)
     
-    # Set reasonable y-axis limits
     plt.ylim(bottom=0, top=max_y * 1.2)
     
     plt.tight_layout()
     
-    # Save and/or show the plot
     if output_file:
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         plt.show()  # Added to display plot in addition to saving it
@@ -247,65 +242,52 @@ def plot_rdf(x_data_all, y_data_all, title=None, output_file=None):
 
 
 def animate_rdf(x_data_all, y_data_all, output_file=None):
-    # Create a figure and axis
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Calculate average RDF across all frames
     y_data_avg = np.mean(y_data_all, axis=0)
 
-    # Set x and y axis labels
     plt.xlabel('Distance (Å)', fontsize=12)
     plt.ylabel('g(r)', fontsize=12)
     
-    # Find max value for consistent y scaling
     max_y = max([np.max(y) for y in y_data_all] + [np.max(y_data_avg)]) * 1.1
     
     def update(frame):
-        ax.clear()  # Clear the previous frame
+        ax.clear()  # Clears the previous frame
         y = y_data_all[frame]
         
-        # Plot current frame RDF
         ax.plot(x_data_all, y, linewidth=2, label='Current Frame')
         
-        # Add average RDF as dashed line with different color
         ax.plot(x_data_all, y_data_avg, linewidth=2, linestyle='--', 
                 color='purple', label='Average RDF')
         
-        # Find the index of the maximum y value
         max_y_index = np.argmax(y)
         max_y_x = x_data_all[max_y_index]
         
-        # Add a line for the maximum y value
         ax.axvline(x=max_y_x, color='red', linestyle='--', label=f'Peak at {max_y_x:.2f} Å')
         
-        # Add legend
         ax.legend(fontsize=10)
         ax.grid(True, alpha=0.3)
         ax.set_ylim(0, max_y)
         ax.set_title(f'Radial Distribution Function - Frame {frame}', fontsize=14)
         return ax,
 
-    # Create the animation
     ani = FuncAnimation(fig, update, frames=range(len(y_data_all)), 
                        interval=200, blit=False)
 
-    # Save or display
     if output_file:
-        # Save interactive HTML version
         html_file = os.path.splitext(output_file)[0] + ".html"
         html_code = ani.to_jshtml()
         with open(html_file, 'w') as f:
             f.write(html_code)
         print(f"Interactive animation saved to '{html_file}'")
         
-        # Also save traditional GIF version
         try:
             ani.save(output_file, writer='pillow', fps=5)
             print(f"GIF animation saved to '{output_file}'")
         except Exception as e:
             print(f"Warning: Could not save GIF animation: {e}")
         
-        plt.tight_layout()  # Added to display animation in addition to saving it
+        plt.tight_layout() 
         plt.close()
     else:
         plt.tight_layout()
@@ -320,7 +302,7 @@ def analyze_rdf(use_prdf: bool,
                 output_filename: Optional[str] = None,
                 atomic_indices: Optional[Tuple[List[int], List[int]]] = None,
                 output_dir: str = 'custom_ase',
-                plot_prdf: bool = False):
+                create_plots: bool = False):  
     """
     Analyze trajectory and calculate radial distribution functions.
     
@@ -342,8 +324,8 @@ def analyze_rdf(use_prdf: bool,
         Tuple of (reference_indices, target_indices) for partial RDF
     output_dir : str, optional
         Directory to save output files (default: 'custom_ase')
-    plot_prdf : bool, optional
-        Whether to create plots of the RDF data (default: False)
+    create_plots : bool, optional
+        Whether to create plots and animations of the RDF data (default: False)
         
     Returns
     -------
@@ -357,7 +339,7 @@ def analyze_rdf(use_prdf: bool,
     """
     images = read(traj_path, index=f'::{frame_skip}')
     if not isinstance(images, list):
-        images = [images]  # Convert to list if only one frame
+        images = [images]  
         
     if not images:
         raise ValueError("No images found in the trajectory.")
@@ -377,14 +359,11 @@ def analyze_rdf(use_prdf: bool,
     x_data_all = ls_rdf[0][1]
     y_data_all = [rdf for rdf, _ in ls_rdf]
     
-    # Create output directory if needed
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
     
-    # Generate base filename without extension
     if not output_filename:
         if use_prdf:
-            # Create descriptive name for PRDF
             if atomic_indices:
                 ref_str = f"{len(atomic_indices[0])}-atoms"
                 target_str = f"{len(atomic_indices[1])}-atoms"
@@ -394,10 +373,8 @@ def analyze_rdf(use_prdf: bool,
         else:
             base_name = "rdf_total"
     else:
-        # Remove extension if present
         base_name = output_filename.rsplit('.', 1)[0] if '.' in output_filename else output_filename
     
-    # Save data to pickle file
     if output_dir:
         pickle_file = os.path.join(output_dir, f"{base_name}.pkl")
         with open(pickle_file, 'wb') as f:
@@ -405,9 +382,7 @@ def analyze_rdf(use_prdf: bool,
         
         print(f"Data saved in '{pickle_file}'")
         
-        # Create plots if requested
-        if plot_prdf:
-            # Determine plot titles and filenames
+        if create_plots:
             if use_prdf:
                 if atomic_indices:
                     title = f"Partial RDF: {len(atomic_indices[0])} reference atoms, {len(atomic_indices[1])} target atoms"
@@ -416,16 +391,13 @@ def analyze_rdf(use_prdf: bool,
             else:
                 title = "Total Radial Distribution Function"
                 
-            # Create and save static plot
             static_plot_file = os.path.join(output_dir, f"{base_name}_plot.png")
             plot_rdf(x_data_all, y_data_all, title=title, output_file=static_plot_file)
             print(f"Static plot saved in '{static_plot_file}'")
             
-            # Create and save animation if we have multiple frames
             if len(y_data_all) > 1:
                 animation_file = os.path.join(output_dir, f"{base_name}_animation.gif")
                 animate_rdf(x_data_all, y_data_all, output_file=animation_file)
                 print(f"Animation saved in '{animation_file}'")
     
-    # Return the results as a dictionary
     return {'x_data': x_data_all, 'y_data_all': y_data_all}

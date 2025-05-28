@@ -64,7 +64,7 @@ def distance_calculation(
     Parameters
     ----------
     traj_path : str
-        Path to the trajectory file
+        Path to the trajectory file in any format supported by ASE
     frame_skip : int
         Read every nth frame (n=frame_skip)
     index_type : str, list, or None, optional
@@ -80,21 +80,33 @@ def distance_calculation(
     Raises
     ------
     ValueError
-        If no frames were found in the trajectory
+        If no frames were found in the trajectory or if format is unsupported
     """
-    frames = read(traj_path, index=f"::{frame_skip}")
-    if not frames:
-        raise ValueError("No frames were found in the trajectory using the given frame_skip.")
+    try:
+        # Let ASE auto-detect file format based on extension
+        frames = read(traj_path, index=f"::{frame_skip}")
+        
+        # Handle the case when a single frame is returned (not a list)
+        if not isinstance(frames, list):
+            frames = [frames]
+            
+        if not frames:
+            raise ValueError("No frames were found in the trajectory using the given frame_skip.")
 
-    def process_frame(frame: Atoms) -> Tuple[np.ndarray, np.ndarray]:
-        dm = frame.get_all_distances(mic=True)
-        idx = indices(frame, index_type)
-        sub_dm = dm[np.ix_(idx, idx)]
-        return dm, sub_dm
+        def process_frame(frame: Atoms) -> Tuple[np.ndarray, np.ndarray]:
+            dm = frame.get_all_distances(mic=True)
+            idx = indices(frame, index_type)
+            sub_dm = dm[np.ix_(idx, idx)]
+            return dm, sub_dm
 
-    results = Parallel(n_jobs=-1)(delayed(process_frame)(frame) for frame in frames)
-    full_dms, sub_dms = zip(*results)
-    return list(full_dms), list(sub_dms)
+        results = Parallel(n_jobs=-1)(delayed(process_frame)(frame) for frame in frames)
+        full_dms, sub_dms = zip(*results)
+        return list(full_dms), list(sub_dms)
+        
+    except ValueError as e:
+        raise e
+    except Exception as e:
+        raise ValueError(f"Error processing trajectory: {e}. Check if the format is supported by ASE.")
 
 
 def save_distance_matrices(

@@ -1,233 +1,448 @@
 User Guide
 ==========
 
-This user guide provides detailed information on the various modules
-available in the CRISP package, along with performance tips to help optimize their usage.
+This user guide provides detailed information on the various modules available in the CRISP package, along with performance tips to help optimize their usage.
 
-Modules Overview
-================
+CRISP is organized into two main subpackages:
 
-1. Atom Indices Classification
-------------------------------
+- ``simulation_utility``: Tools for preparing and processing simulation data
+- ``data_analysis``: Methods for analyzing simulation results
 
-**Module**: CRISP.atom_indices
+Simulation Utility Modules
+===========================
 
-This module allows for the classification of atoms based on custom criteria,
-such as cutoff distances between atom pairs. It is useful for distinguishing different regions 
-or types of atoms within a structure.
+1. Atomic Indices Classification
+--------------------------------
+
+**Module**: ``CRISP.simulation_utility.atomic_indices``
+
+This module allows for the classification of atoms based on custom-defined indices, making it easier to analyze specific subsets within your simulation data.
 
 **Key Features**:
 
-- Customizable classification based on distance criteria.
-- Ability to classify multiple sets of atoms within a single structure.
+- Customizable classification based on distance criteria
+- Automatic generation of atom type indices
+- Cutoff-based neighbor identification
 
 **Example Usage**:
 
 .. code-block:: python
 
-    from CRISP.atom_indices import classify_atoms
-    atom_classes = classify_atoms(structure, cutoff=2.5)
+    from CRISP.simulation_utility.atomic_indices import run_atom_indices
+    
+    cutoffs = {
+        ("O", "H"): 1.2,
+        ("Si", "O"): 1.8,
+        ("Al", "Si"): 3.2,
+        ("O", "O"): 3.0,
+    }
+    
+    run_atom_indices("./wrapped_traj.traj", "./indices_new/", 
+                     frame_index=2, cutoffs=cutoffs)
 
 **Performance Tips**:
 
-- **Optimize Cutoff Selection**: Choosing an appropriate cutoff distance is crucial. \
-  A smaller cutoff will reduce computation time but may miss important interactions, \
-  while a larger cutoff increases accuracy but may be computationally expensive.
-- **Parallel Processing**: If working with large structures, consider parallelizing \
-  the classification process using Python’s multiprocessing library to speed up the computations.
+- Choose appropriate cutoff distances to balance accuracy and computational cost
+- Use frame_index parameter to analyze representative frames instead of entire trajectories
 
+2. Atomic Trajectory Visualization
+----------------------------------
 
-2. Partial Radial Distribution Function (PRDF)
-----------------------------------------------
+**Module**: ``CRISP.simulation_utility.atomic_traj_linemap``
 
-**Module**: CRISP.prdf
-
-This module calculates the Partial Radial Distribution Function (PRDF)
-for a given structure, providing insights into spatial relationships between different atom types.
+Visualizes atomic trajectories in 3D to understand motion and structural changes.
 
 **Key Features**:
 
-- Calculates PRDF for selected atom pairs.
-- Option to compute dynamic PRDF over simulation trajectories.
+- Interactive 3D visualization of atomic trajectories
+- Customizable frame skipping and atom selection
+- HTML output for web-based visualization
 
 **Example Usage**:
 
 .. code-block:: python
 
-    from CRISP.prdf import calculate_prdf
-    prdf = calculate_prdf(structure, atom_pairs=[(1, 2)], r_max=10.0)
+    from CRISP.simulation_utility.atomic_traj_linemap import plot_atomic_trajectory
+    import numpy as np
+    
+    oxygen_indices = np.load("./indices_detailed/ex_fram_ox.npy")
+    plot_atomic_trajectory(
+        traj_path="./wrapped_traj.traj",
+        selected_indices=oxygen_indices,
+        output_path="oxygen_trajectories.html",
+        frame_skip=10
+    )
 
 **Performance Tips**:
 
-- **Limit PRDF Calculation to Essential Atom Pairs**: Only calculate the PRDF for atom \
-  pairs of interest to save computational resources.
-- **Adjust the r_max Parameter**: Reduce the r_max value if long-range interactions \
-  are not essential to your analysis, which can significantly speed up the calculations.
+- Use frame_skip to reduce computational load for long trajectories
+- Select specific atom indices rather than visualizing all atoms
 
-3. Mean Square Displacement (MSD) Calculation
----------------------------------------------
+3. Subsampling
+--------------
 
-**Module**: CRISP.msd_plot
+**Module**: ``CRISP.simulation_utility.subsampling``
 
-The MSD module helps in analyzing the dynamics of atoms within a simulation by \
-calculating their Mean Square Displacement over time.
+Extract representative structures from trajectories using Farthest Point Sampling with SOAP descriptors.
 
 **Key Features**:
 
-- Supports customized atom selection for MSD calculations.
-- Provides a visual plot of the MSD over time.
+- SOAP-descriptor based diversity assessment
+- Farthest Point Sampling for systematic subset selection
+- Convergence visualization
 
 **Example Usage**:
 
 .. code-block:: python
 
-    from CRISP.msd_plot import calculate_msd
-    msd = calculate_msd(trajectory, atom_indices=[1, 2, 3])
+    from CRISP.simulation_utility.subsampling import subsample
+    
+    all_frames = subsample(
+        filename="./trajectory.traj",
+        n_samples=30,
+        index_type="all",
+        file_format="traj",
+        skip=10,
+        plot_subsample=True
+    )
 
 **Performance Tips**:
 
-- **Select Representative Atoms**: Instead of calculating MSD for all atoms, \
-  select a few representative atoms, especially in large systems, to reduce the computational load.
-- **Trajectory Subsampling**: If the trajectory is very long, consider subsampling the \
-  frames to perform MSD calculations on a reduced dataset without losing significant accuracy.
+- Use convergence plots to determine optimal subset size
+- Consider computational budget vs. required accuracy when selecting n_samples
 
-4. Hydrogen Bond Analysis
+4. Error Analysis
+-----------------
+
+**Module**: ``CRISP.simulation_utility.error_analysis``
+
+Perform statistical error analysis on time-correlated simulation data using autocorrelation function and block averaging methods.
+
+**Key Features**:
+
+- Autocorrelation function analysis with τ_int calculation
+- Block averaging with convergence assessment
+- Comprehensive statistical uncertainty estimation
+
+**Example Usage**:
+
+.. code-block:: python
+
+    from CRISP.simulation_utility.error_analysis import error_analysis
+    import numpy as np
+    
+    data = np.load("energy.npy")
+    res = error_analysis(data)
+    print(res["acf_results"])
+    print(res["block_results"])
+
+**Performance Tips**:
+
+- Use autocorrelation analysis for statistically rigorous error estimation
+- Compare ACF and block averaging results for validation
+
+5. Interatomic Distance Calculation
+-----------------------------------
+
+**Module**: ``CRISP.simulation_utility.interatomic_distances``
+
+Calculate and save distance matrices between atoms for further analysis.
+
+**Key Features**:
+
+- Periodic boundary condition handling
+- Selective atom type analysis
+- Distance matrix storage for reuse
+
+**Example Usage**:
+
+.. code-block:: python
+
+    from CRISP.simulation_utility.interatomic_distances import distance_calculation, save_distance_matrices
+    
+    full_dms, sub_dms = distance_calculation("./wrapped_traj.traj", 
+                                           frame_skip=10, index_type=["O"])
+    save_distance_matrices(full_dms, sub_dms, ["O"], 
+                          output_dir="distance_calculations")
+
+**Performance Tips**:
+
+- Use frame_skip to reduce computational load
+- Focus on specific atom types rather than all atoms
+
+Data Analysis Modules
+=====================
+
+1. Contact and Coordination Analysis
+------------------------------------
+
+**Module**: ``CRISP.data_analysis.contact_coordination``
+
+Analyze coordination environments and dynamic contacts between atoms.
+
+**Key Features**:
+
+- Coordination number analysis with custom cutoffs
+- Contact persistence analysis
+- Interactive visualization with heatmaps
+
+**Example Usage**:
+
+.. code-block:: python
+
+    from CRISP.data_analysis.contact_coordination import coordination, contacts
+    
+    # Coordination analysis
+    cn = coordination("./wrapped_traj.traj", "O", ["O"], 
+                     {('O', 'O'): 2.5}, skip_frames=10, plot_cn=True)
+    
+    # Contact analysis
+    sub_dm, cal_contacts = contacts("./wrapped_traj.traj", "O", ["O"], 
+                                   {('O', 'O'): 2.5}, plot_contacts=True)
+
+**Performance Tips**:
+
+- Use appropriate cutoffs based on chemical knowledge
+- Skip frames for long trajectories to reduce computation time
+
+2. Hydrogen Bond Analysis
 -------------------------
 
-**Module**: CRISP.h_bond
+**Module**: ``CRISP.data_analysis.h_bond``
 
-This module calculates hydrogen bonds within a structure or trajectory, 
-allowing you to understand the donor-acceptor interactions based on customizable cutoffs for angles and distances.
+Analyze hydrogen bond networks using geometric criteria based on angle and distance cutoffs.
 
 **Key Features**:
 
-- Adjustable cutoffs for bond angles and distances.
-- Analysis of hydrogen bonds over time in a trajectory.
+- Geometric criteria (angle and distance based)
+- Network visualization and correlation matrices
+- Time series analysis of H-bond counts
 
 **Example Usage**:
 
 .. code-block:: python
 
-    from CRISP.h_bond import analyze_h_bonds
-    h_bonds = analyze_h_bonds(trajectory, angle_cutoff=30, distance_cutoff=2.5)
+    from CRISP.data_analysis.h_bond import hydrogen_bonds
+    
+    h_bonds_per_frame = hydrogen_bonds(
+        traj_path="./wrapped_traj.traj",
+        frame_skip=10,
+        acceptor_atoms=["O"],
+        angle_cutoff=120,
+        h_bond_cutoff=2.5,
+        bond_cutoff=1.6,
+        plot_count=True,
+        plot_heatmap=True,
+        plot_graph_frame=True
+    )
 
 **Performance Tips**:
 
-- **Use Relaxed Cutoffs for Initial Screening**: Start with more relaxed angle and \
-  distance cutoffs to quickly screen for potential hydrogen bonds, then refine the \
-  parameters in subsequent analyses.
-- **Parallel Processing for Large Trajectories**: For long trajectories, distribute \
-  the workload across multiple processors to improve performance.
+- Use relaxed cutoffs for initial screening, then refine parameters
+- Enable specific plots based on analysis needs to save computation time
 
-5. Coordination Analysis
-------------------------
+3. Radial Distribution Function (RDF)
+-------------------------------------
 
-**Module**: CRISP.coord
+**Module**: ``CRISP.data_analysis.prdf``
 
-The Coordination module provides insights into the coordination environment of atoms\
-in a structure by analyzing the number and type of neighbors around each atom.
+Calculate radial distribution functions for spatial relationship analysis.
 
 **Key Features**:
 
-- Customizable cutoff distances for neighbor detection.
-- Suitable for analyzing local environments in complex materials.
+- Partial RDF (PRDF) calculation for specific atom pairs
+- Automatic binning and periodic boundary condition handling
+- Interactive and static visualization options
 
 **Example Usage**:
 
 .. code-block:: python
 
-    from CRISP.coord import calculate_coordination
-    coord = calculate_coordination(structure, cutoff=3.0)
+    from CRISP.data_analysis.prdf import analyze_rdf
+    
+    result = analyze_rdf(
+        use_prdf=True,
+        rmax=6,
+        traj_path="./trajectory.traj",
+        nbins=50,
+        frame_skip=100,
+        atomic_indices=(pt_indices, pt_indices),
+        create_plots=True
+    )
 
 **Performance Tips**:
 
-- **Focus on Key Atoms**: Limit the coordination analysis to atoms of particular interest\
-  (e.g., active sites) rather than the entire structure to save time.
-- **Use Efficient Data Structures**: Utilize numpy arrays or similar data structures to\
-  handle large datasets efficiently during the analysis.
+- Adjust rmax to focus on relevant distance ranges
+- Use frame_skip for long trajectories
+- Limit analysis to essential atom pairs
 
-6. Clustering Frame Analysis
-----------------------------
-
-**Module**: CRISP.clustering_FrameAnalysis
-
-This module applies clustering algorithms to identify groups of atoms within a \
-single frame of a simulation, revealing patterns and structural features.
-
-**Key Features**:
-
-- Uses DBSCAN clustering with periodic boundary conditions.
-- Visualizes clustering results with 3D plots.
-
-**Example Usage**:
-
-.. code-block:: python
-
-    from CRISP.clustering_FrameAnalysis import perform_clustering
-    clusters = perform_clustering(structure, eps=1.5, min_samples=5)
-
-**Performance Tips**:
-
-- **Tune Clustering Parameters**: Adjust eps and min_samples parameters carefully \
-  to balance between detecting meaningful clusters and computational efficiency.
-- **Reduce Dimensionality**: If applicable, perform dimensionality reduction \
-  (e.g., PCA) before clustering to speed up the process.
-
-7. Clustering Trajectory Analysis
+4. Mean Square Displacement (MSD)
 ---------------------------------
 
-**Module**: CRISP.clustering_TrajAnalysis
+**Module**: ``CRISP.data_analysis.msd``
 
-Extending the clustering analysis to entire trajectories, this module helps identify \
-dynamic structural changes and transitions over time.
+Calculate and analyze Mean Square Displacement to study diffusion properties.
 
 **Key Features**:
 
-- Tracks the evolution of clusters across frames.
-- Provides tools for analyzing temporal patterns.
+- Two-step analysis: MSD calculation and diffusion coefficient extraction
+- Linear fitting with statistical error estimation
+- Visual representation with fit lines
 
 **Example Usage**:
 
 .. code-block:: python
 
-    from CRISP.clustering_TrajAnalysis import analyze_trajectory
-    traj_clusters = analyze_trajectory(trajectory, eps=1.5, min_samples=5)
+    from CRISP.data_analysis.msd import calculate_save_msd, analyze_from_csv
+    
+    # Step 1: Calculate MSD
+    msd_values, msd_times = calculate_save_msd(
+        traj_file="./trajectory.traj",
+        timestep_value=5000.0,
+        indices_file="./indices.npy",
+        output_file="msd_results.csv"
+    )
+    
+    # Step 2: Analyze diffusion
+    D, error = analyze_from_csv("msd_results.csv", plot_msd=True)
 
 **Performance Tips**:
 
-- **Frame Selection**: Perform clustering on a subset of frames first to identify important \
-  regions of the trajectory before extending to the entire dataset.
-- **Cluster Tracking**: Use efficient algorithms to track clusters across frames, especially in \
-  long trajectories, to avoid memory and performance bottlenecks.
+- Use representative atom selection instead of all atoms
+- Consider trajectory subsampling for very long simulations
 
-8. Atom Correlation Matrix
---------------------------
+5. Clustering Analysis
+----------------------
 
-**Module**: CRISP.atom_correlation
+**Module**: ``CRISP.data_analysis.clustering``
 
-This module calculates and visualizes the correlation matrix for atom pairs, 
-based on their proximity across frames in a simulation.
+Identify atomic clusters using DBSCAN clustering algorithms.
 
 **Key Features**:
 
-- Computes correlation between atom pairs over time.
-- Useful for identifying correlated movements or interactions.
+- DBSCAN clustering with periodic boundary conditions
+- Single-frame and trajectory-based analysis
+- 3D visualization and cluster statistics
 
 **Example Usage**:
 
 .. code-block:: python
 
-    from CRISP.atom_correlation import calculate_correlation
-    correlation_matrix = calculate_correlation(trajectory, cutoff=3.0)
+    from CRISP.data_analysis.clustering import analyze_frame, analyze_trajectory
+    
+    # Single frame analysis
+    analyzer = analyze_frame(
+        traj_path="./trajectory.traj",
+        atom_indices="./indices.npy",
+        threshold=2.6,
+        min_samples=2,
+        custom_frame_index=8100
+    )
+    result = analyzer.analyze_structure(output_dir="clustering_results")
+    
+    # Trajectory analysis
+    analysis_results = analyze_trajectory(
+        traj_path="./trajectory.traj",
+        indices_path="./indices.npy",
+        threshold=3.0,
+        min_samples=2,
+        frame_skip=100
+    )
 
 **Performance Tips**:
 
-- **Limit Atom Pair Selection**: Focus on atom pairs that are likely to exhibit \
-  significant correlations to reduce computational complexity.
-- **Efficient Memory Management**: Use sparse matrix representations if the \
-  correlation matrix is large but sparsely populated to save memory and speed up computations.
+- Tune threshold and min_samples parameters based on physical understanding
+- Use frame_skip for trajectory analysis to reduce computational load
+- Consider using different thresholds to explore various connectivity definitions
+
+6. Volumetric Density
+---------------------
+
+**Module**: ``CRISP.data_analysis.volumetric_atomic_density``
+
+Create 3D volumetric density maps to visualize the spatial distribution of atoms throughout a trajectory.
+
+**Key Features**:
+
+- 3D density mapping with interactive visualizations
+- Optional 2D projections (XY, YZ, XZ) for cross-sectional analysis
+- Flexible thresholding (relative or absolute)
+- Data export in NPZ format for further analysis
+- Framework integration with selective atom visualization
+
+**Example Usage**:
+
+.. code-block:: python
+
+    from CRISP.data_analysis.volumetric_atomic_density import create_density_map
+    
+    # Basic density map with projections
+    fig = create_density_map(
+        traj_path="./trajectory.traj",
+        indices_path="./atom_indices.npy",
+        frame_skip=100,
+        threshold=0.05,
+        opacity=0.8,
+        show_projections=True,
+        save_density=True,
+        output_dir="./density_analysis",
+        output_file="density_map.html"
+    )
+    
+    # Comparative analysis with different projection modes
+    projection_options = [True, False]
+    for show_projections in projection_options:
+        proj_text = "with_projections" if show_projections else "no_projections"
+        create_density_map(
+            traj_path="./trajectory.traj",
+            indices_path="./indices.npy",
+            frame_skip=100,
+            threshold=0.0,
+            opacity=0.8,
+            show_projections=show_projections,
+            save_projection_images=show_projections,
+            output_dir="./density_comparison",
+            output_file=f"density_{proj_text}.html"
+        )
+
+**Performance Tips**:
+
+- Use appropriate frame_skip values to balance accuracy and computational efficiency
+- Start with threshold=0.0 to see all density regions, then adjust for focus areas
+- Use save_density=True to avoid recomputation when adjusting visualization parameters
+- Consider omit_static_indices to focus on mobile species in complex systems
+- Adjust nbins parameter based on system size and required resolution
+
+**Applications**:
+
+- Zeolite guest molecule distribution analysis
+- Diffusion pathway identification in porous materials
+- Adsorption site characterization
+- Phase behavior studies in confined systems
+- Structural flexibility analysis
+
+General Performance Tips
+========================
+
+**Memory Management**:
+
+- Use frame skipping for long trajectories
+- Focus analysis on specific atom types or regions of interest
+- Save intermediate results to avoid recomputation
+
+**Parallel Processing**:
+
+- Consider using multiple cores for trajectory analysis
+- Batch process multiple systems or conditions
+- Use efficient data structures (numpy arrays) for large datasets
+
+**Parameter Optimization**:
+
+- Start with reasonable default parameters based on chemical knowledge
+- Use convergence plots and validation against experimental data
+- Perform sensitivity analysis to understand parameter effects
 
 Further Reading
 ===============
 
-For more detailed information, including advanced usage and troubleshooting, please refer to the [Developer Guide](developer_guide.rst).
+For more detailed information, including advanced usage and troubleshooting, please refer to the :doc:`developer_guide` and :doc:`tutorials`.

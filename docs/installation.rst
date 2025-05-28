@@ -24,7 +24,7 @@ Next, clone the CRISP repository using the git clone command:
 
 .. code-block:: bash
 
-    git@github.com:Indranil17/CRISP_HOST.git
+    git clone git@github.com:Indranil17/CRISP_HOST.git
 
 
 Now, navigate into the CRISP directory and install the package using pip:
@@ -44,14 +44,37 @@ Python shell in your terminal and importing the CRISP package:
     >>> CRISP.atom_indices()
 
 
-If no errors occured and the CRISP package is successfully imported, 
+If no errors occurred and the CRISP package is successfully imported, 
 your installation is complete and ready to use.
 
+Testing Installation
+====================
 
+To verify that CRISP is working correctly and to run the test suite, install the testing dependencies:
 
+.. code-block:: bash
 
+    pip install pytest pytest-cov
 
+Run the test suite to ensure all functionality is working:
 
+.. code-block:: bash
+
+    # Run all tests
+    pytest CRISP
+
+    # Run tests with coverage report
+    pytest CRISP --cov=CRISP --cov-report=term-missing
+
+    # Generate detailed HTML coverage report
+    pytest CRISP --cov=CRISP --cov-report=html
+
+The tests require trajectory data in the ``CRISP/data`` directory. If tests are skipped due to missing data, 
+this is normal behavior when data files are not available.
+
+**Expected Output:**
+The test suite should complete with most tests passing. Some tests may be skipped if specific data files 
+are not present, which is acceptable for basic installation verification.
 
 
 

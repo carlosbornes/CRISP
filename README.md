@@ -7,7 +7,7 @@ CRISP
 
 <img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_logo2.png" width="300">
 
-# CRISP (Clustering, Radial, and other Insightful Simulation Post-processing)
+# CRISP (A Comprehensive Repository for Insightful Simulation Post-Processing)
 
 ## What is CRISP?
 CRISP is a post-simulation analysis package built on the Atomic Simulation Environment (ASE). It is designed for efficient and insightful analysis of molecular dynamics (MD) and other simulations, enabling in-depth exploration with just a few lines of code, including powerful visualization options.
@@ -50,6 +50,7 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 ### 7. Efficient and Robust Sampling
 - Sample structures using Furthest Point Sampling (FPS) with SOAP descriptors.
 - Efficiently subsample large databases or simulations by selecting the most diverse structures while avoiding redundancy.
+
 
 # Requirements
 This package is built around the ASE (Atomic Simulation Environment) and thus requires the installation of ASE, available at: [ASE Installation Guide](https://wiki.fysik.dtu.dk/ase/install.html).

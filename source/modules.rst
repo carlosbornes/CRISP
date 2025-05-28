@@ -1,8 +1,6 @@
-Desktop
-=======
+CRISP package
+=============
 
-.. toctree::
-   :maxdepth: 4
+.. automodule:: CRISP
+   :no-index:
 
-   basin_swap
-   corrector

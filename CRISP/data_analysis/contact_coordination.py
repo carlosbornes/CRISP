@@ -1,8 +1,7 @@
 """
-CRISP/data_analysis/distance_analysis.py
+CRISP/data_analysis/contact_coordination.py
 
-This module performs distance analysis on molecular dynamics trajectory data,
-including coordination number calculation and atomic contact analysis.
+This module performs contact and correlation on molecular dynamics trajectory data.
 """
 
 from ase.io import read
@@ -58,18 +57,18 @@ def indices(atoms, ind: Union[str, List[Union[int, str]]]) -> np.ndarray:
     raise ValueError("Invalid index type")
 
 
-def coordination_frame(atoms, target_atoms, ligand_atoms, custom_cutoffs=None, mic=True):
+def coordination_frame(atoms, central_atoms, target_atoms, custom_cutoffs=None, mic=True):
     """
-    Calculate coordination numbers for target atoms based on interatomic distances and cutoff criteria.
+    Calculate coordination numbers for central atoms based on interatomic distances and cutoff criteria.
     
     Parameters
     ----------
     atoms : ase.Atoms
         ASE Atoms object containing atomic structure
+    central_atoms : Union[str, List[Union[int, str]]]
+        Specifier for central atoms
     target_atoms : Union[str, List[Union[int, str]]]
-        Specifier for target atoms
-    ligand_atoms : Union[str, List[Union[int, str]]]
-        Specifier for ligand atoms
+        Specifier for target atoms that interact with central atoms
     custom_cutoffs : Optional[Dict[Tuple[str, str], float]]
         Dictionary with custom cutoff distances for atom pairs
     mic : bool
@@ -78,39 +77,38 @@ def coordination_frame(atoms, target_atoms, ligand_atoms, custom_cutoffs=None, m
     Returns
     -------
     Dict[int, int]
-        Dictionary mapping target atom indices to their coordination numbers
+        Dictionary mapping central atom indices to their coordination numbers
     """
+    indices_central = indices(atoms, central_atoms)
     indices_target = indices(atoms, target_atoms)
-    indices_ligand = indices(atoms, ligand_atoms)
 
     dm = atoms.get_all_distances(mic=mic)
     np.fill_diagonal(dm, np.inf)
 
-    # FIX: Use np.ix_ for proper indexing of the distance matrix
-    sub_dm = dm[np.ix_(indices_target, indices_ligand)]
+    sub_dm = dm[np.ix_(indices_central, indices_target)]
 
+    central_atomic_numbers = np.array(atoms.get_atomic_numbers())[indices_central]
     target_atomic_numbers = np.array(atoms.get_atomic_numbers())[indices_target]
-    ligand_atomic_numbers = np.array(atoms.get_atomic_numbers())[indices_ligand]
 
+    central_vdw_radii = vdw_radii[central_atomic_numbers]
     target_vdw_radii = vdw_radii[target_atomic_numbers]
-    ligand_vdw_radii = vdw_radii[ligand_atomic_numbers]
 
-    cutoff_matrix = 0.6 * (target_vdw_radii[:, np.newaxis] + ligand_vdw_radii[np.newaxis, :])
+    cutoff_matrix = 0.6 * (central_vdw_radii[:, np.newaxis] + target_vdw_radii[np.newaxis, :])
 
     if custom_cutoffs is not None:
         cutoff_atomic_numbers = [tuple(sorted(atomic_numbers[symbol] for symbol in pair)) for pair in
                                  list(custom_cutoffs.keys())]
         cutoff_values = list(custom_cutoffs.values())
 
-        cutoff_matrix_indices = [[tuple(sorted([i, j])) for j in ligand_atomic_numbers] for i in target_atomic_numbers]
+        cutoff_matrix_indices = [[tuple(sorted([i, j])) for j in target_atomic_numbers] for i in central_atomic_numbers]
 
-        for i, target_atom in enumerate(cutoff_matrix_indices):
-            for j, bond in enumerate(target_atom):
+        for i, central_atom in enumerate(cutoff_matrix_indices):
+            for j, bond in enumerate(central_atom):
                 if bond in cutoff_atomic_numbers:
                     cutoff_matrix[i, j] = cutoff_values[cutoff_atomic_numbers.index(bond)]
 
     coordination_numbers = np.sum(sub_dm < cutoff_matrix, axis=1)
-    coordination_dict_frame = dict(zip(indices_target, coordination_numbers))
+    coordination_dict_frame = dict(zip(indices_central, coordination_numbers))
     return coordination_dict_frame
 
 
@@ -172,7 +170,7 @@ def get_avg_percentages(coordination_data, atom_type, plot_cn=False, output_dir=
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "CN_time_series.png"), dpi=300, bbox_inches='tight')
-        plt.show()  # Added to display the plot
+        plt.show()  
         plt.close()
 
     return avg_percentages
@@ -200,36 +198,30 @@ def plot_coordination_distribution(avg_percentages, atom_type, plot_cn, output_d
     Dict[int, float]
         Dictionary of overall average coordination percentages
     """
-    # Call the Plotly version of the function for interactive visualization
-    # Also save a static PNG version using matplotlib for compatibility
     overall_avg_percentages = plot_coordination_distribution_plotly(avg_percentages, atom_type, plot_cn, 
                                                                    output_dir=output_dir, 
                                                                    output_file=output_file)
     
-    # Generate a static version for compatibility
+    # Generate a static version
     if plot_cn:
         overall_avg_percentages = {coord_type: sum(percentages) / len(percentages) 
                                   for coord_type, percentages in avg_percentages.items()}
         fig, ax = plt.subplots(figsize=(10, 7))
         
-        # Sort by coordination number for consistent ordering
         sorted_data = sorted(overall_avg_percentages.items())
         coord_types = [item[0] for item in sorted_data]
         percentages = [item[1] for item in sorted_data]
         
-        # Generate colors from a colormap
         colors = plt.cm.tab10.colors[:len(coord_types)]
         
-        # Create pie chart without labels or percentages on the slices
+        # Create pie chart 
         wedges, _ = ax.pie(percentages, 
                           wedgeprops=dict(width=0.5, edgecolor='w'),
                           startangle=90,
                           colors=colors)
         
-        # Create legend entries with color-coded boxes
         legend_labels = [f'CN={coord_type}: {pct:.1f}%' for coord_type, pct in sorted_data]
         
-        # Add a legend box to the right of the pie chart
         ax.legend(wedges, legend_labels, 
                   title="Coordination Numbers",
                   loc="center left", 
@@ -247,7 +239,7 @@ def plot_coordination_distribution(avg_percentages, atom_type, plot_cn, output_d
             
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, f"{output_file}.png"), dpi=300, bbox_inches='tight')
-        plt.show()  # Added to display the plot
+        plt.show()  
         plt.close()
     
     return overall_avg_percentages
@@ -279,19 +271,16 @@ def plot_coordination_distribution_plotly(avg_percentages, atom_type, plot_cn, o
                                avg_percentages.items()}
 
     if plot_cn:
-        # Sort by coordination number for consistent ordering
         sorted_data = sorted(overall_avg_percentages.items())
         coord_types = [f"CN={item[0]}" for item in sorted_data]
         percentages = [item[1] for item in sorted_data]
         
-        # Create hover text with percentage information
         hover_info = [f"CN={coord_type}: {pct:.2f}%" for coord_type, pct in sorted_data]
         
-        # Create Plotly pie chart
         fig = go.Figure(data=[go.Pie(
             labels=coord_types,
             values=percentages,
-            hole=0.4,  # Donut chart style
+            hole=0.4,  
             textinfo='label+percent',
             hoverinfo='text',
             hovertext=hover_info,
@@ -302,7 +291,6 @@ def plot_coordination_distribution_plotly(avg_percentages, atom_type, plot_cn, o
             ),
         )])
         
-        # Update layout for better appearance
         if atom_type:
             title_text = f'Average Distribution of {atom_type} Atom Coordination'
         else:
@@ -323,7 +311,6 @@ def plot_coordination_distribution_plotly(avg_percentages, atom_type, plot_cn, o
             width=800
         )
         
-        # Save only HTML version - no need for kaleido
         html_path = os.path.join(output_dir, f"{output_file}.html")
         fig.write_html(html_path)
         print(f"Interactive coordination distribution chart saved to {html_path}")
@@ -331,7 +318,7 @@ def plot_coordination_distribution_plotly(avg_percentages, atom_type, plot_cn, o
     return overall_avg_percentages
 
 
-def log_coordination_data(distribution, atom_type, output_dir="./"):
+def log_coordination_data(distribution, avg_percentages, atom_type, avg_cn=None, std_cn=None, output_dir="./"):
     """
     Log coordination analysis statistics to a text file.
     
@@ -339,8 +326,14 @@ def log_coordination_data(distribution, atom_type, output_dir="./"):
     ----------
     distribution : Dict[int, float]
         Dictionary of overall average coordination percentages
+    avg_percentages : Dict[int, List[float]]
+        Dictionary of percentage values per frame for each coordination number
     atom_type : Optional[str]
         Chemical symbol of target atoms or None
+    avg_cn : float, optional
+        Average coordination number
+    std_cn : float, optional
+        Standard deviation of coordination number
     output_dir : str, optional
         Directory where the statistics file will be saved
         
@@ -360,27 +353,41 @@ def log_coordination_data(distribution, atom_type, output_dir="./"):
         else:
             f.write("Coordination Analysis\n")
         f.write("======================================\n\n")
+        
+        if avg_cn is not None and std_cn is not None:
+            f.write(f"Average Coordination Number: {avg_cn:.2f} ± {std_cn:.2f}\n\n")
+        
         f.write("Overall Average Percentages:\n")
+        
+        # Standard deviations for each coordination number
+        std_devs = {cn: np.std(values) for cn, values in avg_percentages.items()}
+        
         for coord_type, avg_percentage in sorted(distribution.items()):
-            f.write(f"  CN={coord_type}: {avg_percentage:.2f}%\n")
+            std_dev = std_devs[coord_type]
+            f.write(f"  CN={coord_type}: {avg_percentage:.2f}% ± {std_dev:.2f}%\n")
+        
+        most_common_cn = max(distribution.items(), key=lambda x: x[1])[0]
+        f.write(f"\nMost common coordination number: {most_common_cn}\n")
+        
+    print(f"Coordination statistics saved to {stats_file}")
 
 
-def coordination(filename, target_atoms, ligand_atoms, custom_cutoffs, skip_frames=10, 
+def coordination(traj_path, central_atoms, target_atoms, custom_cutoffs, frame_skip=10, 
                 plot_cn=False, output_dir="./"):
     """
     Process a trajectory file to compute coordination numbers for each frame.
     
     Parameters
     ----------
-    filename : str
+    traj_path : str
         Path to the trajectory file
+    central_atoms : Union[str, List[Union[int, str]]]
+        Specifier for central atoms being analyzed
     target_atoms : Union[str, List[Union[int, str]]]
-        Specifier for target atoms
-    ligand_atoms : Union[str, List[Union[int, str]]]
-        Specifier for ligand atoms
+        Specifier for target atoms that interact with central atoms
     custom_cutoffs : Dict[Tuple[str, str], float]
         Dictionary with custom cutoff distances
-    skip_frames : int, optional
+    frame_skip : int, optional
         Interval for skipping frames (default: 10)
     plot_cn : bool, optional
         Boolean to indicate if plots should be generated (default: False)
@@ -390,42 +397,69 @@ def coordination(filename, target_atoms, ligand_atoms, custom_cutoffs, skip_fram
     Returns
     -------
     List
-        List containing coordination dictionary, average percentages, distribution, and atom type
+        List containing coordination dictionary, average percentages, distribution, atom type, and avg CN
     """
-    # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
-    trajectory = read(filename, index=f"::{skip_frames}")
+    trajectory = read(traj_path, index=f"::{frame_skip}")
     coordination_dict = {}
 
-    # Process frames in parallel
     results = Parallel(n_jobs=-1)(
-        delayed(coordination_frame)(atoms, target_atoms, ligand_atoms, custom_cutoffs)
+        delayed(coordination_frame)(atoms, central_atoms, target_atoms, custom_cutoffs)
         for atoms in trajectory
     )
 
-    # Organize results by atom
     for frame_dict in results:
         for key, value in frame_dict.items():
             coordination_dict.setdefault(key, []).append(value)
 
-    # Get atom type for labeling
-    atom_type = (target_atoms if isinstance(target_atoms, str)
-                else chemical_symbols[target_atoms] if isinstance(target_atoms, int)
-                else None)
+    
+    if isinstance(central_atoms, str):
+        if central_atoms.endswith('.npy'):
+            # Extract just the basename without extension for .npy files
+            atom_type = os.path.splitext(os.path.basename(central_atoms))[0]
+        else:
+            atom_type = central_atoms
+    elif isinstance(central_atoms, int):
+        atom_type = chemical_symbols[central_atoms]
+    else:
+        atom_type = None
 
-    # Generate analysis results and plots
     avg_percentages = get_avg_percentages(coordination_dict, atom_type, plot_cn, output_dir=output_dir)
     
-    # Always use Plotly for coordination distribution
     distribution = plot_coordination_distribution(avg_percentages, atom_type, plot_cn, output_dir=output_dir)
-        
-    log_coordination_data(distribution, atom_type, output_dir=output_dir)
+    
+    all_cn_values = []
+    for atom_idx, cn_list in coordination_dict.items():
+        all_cn_values.extend(cn_list)
+    
+    all_cn_values = np.array(all_cn_values)
+    avg_cn = np.mean(all_cn_values)
+    std_cn = np.std(all_cn_values)
+    
+    weighted_avg_cn = sum(cn * (pct/100) for cn, pct in distribution.items())
+    
+    log_coordination_data(distribution, avg_percentages, atom_type, 
+                         avg_cn=avg_cn, std_cn=std_cn, output_dir=output_dir)
+    
+    print("\nCoordination Statistics Summary:")
+    print("=" * 40)
+    
+    std_devs = {cn: np.std(values) for cn, values in avg_percentages.items()}
+    
+    for coord_type, avg_percentage in sorted(distribution.items()):
+        std_dev = std_devs[coord_type]
+        print(f"CN={coord_type}: {avg_percentage:.2f}% ± {std_dev:.2f}%")
+    
+    most_common_cn = max(distribution.items(), key=lambda x: x[1])[0]
+    print(f"\nMost common coordination number: {most_common_cn}")
+    
+    print(f"\nAverage Coordination Number: {avg_cn:.2f} ± {std_cn:.2f}")
+    
+    return [coordination_dict, avg_percentages, distribution, atom_type, avg_cn, std_cn]
 
-    return [coordination_dict, avg_percentages, distribution, atom_type]
 
-
-def contacts_frame(atoms, target_atoms, contact_atoms, custom_cutoffs, mic=True):
+def contacts_frame(atoms, central_atoms, target_atoms, custom_cutoffs, mic=True):
     """
     Processes a single atoms frame to compute the sub-distance matrix and the corresponding cutoff matrix.
     
@@ -433,10 +467,10 @@ def contacts_frame(atoms, target_atoms, contact_atoms, custom_cutoffs, mic=True)
     ----------
     atoms : ase.Atoms
         ASE Atoms object containing atomic structure
+    central_atoms : Union[str, List[Union[int, str]]]
+        Selection criteria for central atoms being analyzed
     target_atoms : Union[str, List[Union[int, str]]]
-        Selection criteria for target atoms
-    contact_atoms : Union[str, List[Union[int, str]]]
-        Selection criteria for contact atoms
+        Selection criteria for target atoms that interact with central atoms
     custom_cutoffs : Dict[Tuple[str, str], float]
         Dictionary mapping atom pairs to custom cutoff values
     mic : bool, optional
@@ -445,22 +479,37 @@ def contacts_frame(atoms, target_atoms, contact_atoms, custom_cutoffs, mic=True)
     Returns
     -------
     Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-        Sub-distance matrix, cutoff matrix, target indices, and contact indices
+        Sub-distance matrix, cutoff matrix, central atom indices, and target atom indices
     """
+    indices_central = indices(atoms, central_atoms)
     indices_target = indices(atoms, target_atoms)
-    indices_contact = indices(atoms, contact_atoms)
-
+    
     dm = atoms.get_all_distances(mic=mic)
-    np.fill_diagonal(dm, np.inf)
-    sub_dm = dm[np.ix_(indices_target, indices_contact)]
+    np.fill_diagonal(dm, np.inf)  # Avoids self-interactions
+    
+    has_overlap = np.intersect1d(indices_central, indices_target).size > 0
+    
+    if has_overlap:
+        mask = np.zeros_like(dm, dtype=bool)
+        for i_idx, i in enumerate(indices_central):
+            for j_idx, j in enumerate(indices_target):
+                # We only count each pair once by enforcing i < j
+                if i < j:
+                    mask[i, j] = True
+                    
+        filtered_dm = np.where(mask, dm, np.inf)
+        sub_dm = filtered_dm[np.ix_(indices_central, indices_target)]
+    else:
+        sub_dm = dm[np.ix_(indices_central, indices_target)]
 
+    # Get atomic numbers and van der Waals radii
+    central_atomic_numbers = np.array(atoms.get_atomic_numbers())[indices_central]
     target_atomic_numbers = np.array(atoms.get_atomic_numbers())[indices_target]
-    contact_atomic_numbers = np.array(atoms.get_atomic_numbers())[indices_contact]
 
+    central_vdw_radii = vdw_radii[central_atomic_numbers]
     target_vdw_radii = vdw_radii[target_atomic_numbers]
-    contact_vdw_radii = vdw_radii[contact_atomic_numbers]
 
-    cutoff_matrix = 0.6 * (target_vdw_radii[:, np.newaxis] + contact_vdw_radii[np.newaxis, :])
+    cutoff_matrix = 0.6 * (central_vdw_radii[:, np.newaxis] + target_vdw_radii[np.newaxis, :])
 
     if custom_cutoffs is not None:
         cutoff_atomic_numbers = [
@@ -470,35 +519,35 @@ def contacts_frame(atoms, target_atoms, contact_atoms, custom_cutoffs, mic=True)
         cutoff_values = list(custom_cutoffs.values())
 
         cutoff_matrix_indices = [
-            [tuple(sorted([i, j])) for j in contact_atomic_numbers]
-            for i in target_atomic_numbers
+            [tuple(sorted([i, j])) for j in target_atomic_numbers]
+            for i in central_atomic_numbers
         ]
-        for i, target_atom in enumerate(cutoff_matrix_indices):
-            for j, bond in enumerate(target_atom):
+        for i, central_atom in enumerate(cutoff_matrix_indices):
+            for j, bond in enumerate(central_atom):
                 if bond in cutoff_atomic_numbers:
                     cutoff_matrix[i, j] = cutoff_values[cutoff_atomic_numbers.index(bond)]
 
-    return sub_dm, cutoff_matrix, indices_target, indices_contact
+    return sub_dm, cutoff_matrix, indices_central, indices_target
 
 
-def plot_contact_heatmap(contact_matrix, skip_frames, time_step, x_labels, y_labels, atom_type, output_dir="./"):
+def plot_contact_heatmap(contact_matrix, frame_skip, time_step, x_labels, y_labels, atom_type, output_dir="./"):
     """
-    Plots and saves an interactive heatmap showing contact times between target and contact atoms.
+    Plots and saves an interactive heatmap showing contact times between central and target atoms.
     
     Parameters
     ----------
     contact_matrix : np.ndarray
         Boolean 3D array of contacts
-    skip_frames : int
+    frame_skip : int
         Number of frames skipped when processing the trajectory
     time_step : float
         Time step between frames (used to convert counts to time)
     x_labels : List[str]
-        Labels for the contact atoms (x-axis)
+        Labels for the target atoms (x-axis)
     y_labels : List[str]
-        Labels for the target atoms (y-axis)
+        Labels for the central atoms (y-axis)
     atom_type : Optional[str] 
-        Target atom type (used for naming the file)
+        Central atom type (used for naming the file)
     output_dir : str, optional
         Directory where the output file will be saved (default: "./")
         
@@ -506,19 +555,17 @@ def plot_contact_heatmap(contact_matrix, skip_frames, time_step, x_labels, y_lab
     -------
     None
     """
-    contact_times_matrix = np.sum(contact_matrix, axis=0) * skip_frames * time_step / 1000
+    contact_times_matrix = np.sum(contact_matrix, axis=0) * frame_skip * time_step / 1000
     
-    # Create interactive hover text
     hover_text = []
-    for i, target_label in enumerate(y_labels):
+    for i, central_label in enumerate(y_labels):
         hover_row = []
-        for j, contact_label in enumerate(x_labels):
-            hover_row.append(f"Target: {target_label}<br>" +
-                           f"Contact: {contact_label}<br>" +
+        for j, target_label in enumerate(x_labels):
+            hover_row.append(f"Central: {central_label}<br>" +
+                           f"Target: {target_label}<br>" +
                            f"Contact time: {contact_times_matrix[i, j]:.2f} ps")
         hover_text.append(hover_row)
     
-    # Create the Plotly heatmap
     fig = go.Figure(data=go.Heatmap(
         z=contact_times_matrix,
         x=x_labels,
@@ -529,17 +576,15 @@ def plot_contact_heatmap(contact_matrix, skip_frames, time_step, x_labels, y_lab
         colorbar=dict(title='Contact Time (ps)')
     ))
     
-    # Update layout for better appearance
     fig.update_layout(
         title=dict(text='Heatmap of contact times within cutoffs', font=dict(size=16)),
-        xaxis=dict(title='Contact Indices', tickfont=dict(size=10)),
-        yaxis=dict(title='Target Indices', tickfont=dict(size=10)),
+        xaxis=dict(title='Target Atoms', tickfont=dict(size=10)),
+        yaxis=dict(title='Central Atoms', tickfont=dict(size=10)),
         width=900,
         height=700,
         autosize=True
     )
     
-    # Save only HTML version - no need for kaleido
     if atom_type is not None:
         html_filename = os.path.join(output_dir, f"{atom_type}_heatmap_contacts.html")
     else:
@@ -551,18 +596,18 @@ def plot_contact_heatmap(contact_matrix, skip_frames, time_step, x_labels, y_lab
 
 def plot_distance_heatmap(sub_dm_total, x_labels, y_labels, atom_type, output_dir="./"):
     """
-    Plots and saves an interactive heatmap of average distances between target and contact atoms.
+    Plots and saves an interactive heatmap of average distances between central and target atoms.
     
     Parameters
     ----------
     sub_dm_total : np.ndarray
         3D numpy array containing sub-distance matrices for each frame
     x_labels : List[str]
-        Labels for the contact atoms (x-axis)
+        Labels for the target atoms (x-axis)
     y_labels : List[str]
-        Labels for the target atoms (y-axis)
+        Labels for the central atoms (y-axis)
     atom_type : Optional[str]
-        Target atom type (used for naming the file)
+        Central atom type (used for naming the file)
     output_dir : str, optional
         Directory where the output file will be saved (default: "./")
         
@@ -573,14 +618,13 @@ def plot_distance_heatmap(sub_dm_total, x_labels, y_labels, atom_type, output_di
     average_distance_matrix = np.mean(sub_dm_total, axis=0)
     std_distance_matrix = np.std(sub_dm_total, axis=0)
     
-    # Create hover text with statistical information
     hover_text = []
-    for i, target_label in enumerate(y_labels):
+    for i, central_label in enumerate(y_labels):
         hover_row = []
-        for j, contact_label in enumerate(x_labels):
+        for j, target_label in enumerate(x_labels):
             hover_row.append(
+                f"Central: {central_label}<br>" +
                 f"Target: {target_label}<br>" +
-                f"Contact: {contact_label}<br>" +
                 f"Avg distance: {average_distance_matrix[i, j]:.3f} Å<br>" +
                 f"Std deviation: {std_distance_matrix[i, j]:.3f} Å<br>" +
                 f"Min: {np.min(sub_dm_total[:, i, j]):.3f} Å<br>" +
@@ -588,7 +632,6 @@ def plot_distance_heatmap(sub_dm_total, x_labels, y_labels, atom_type, output_di
             )
         hover_text.append(hover_row)
     
-    # Create the Plotly heatmap
     fig = go.Figure(data=go.Heatmap(
         z=average_distance_matrix,
         x=x_labels,
@@ -599,17 +642,15 @@ def plot_distance_heatmap(sub_dm_total, x_labels, y_labels, atom_type, output_di
         colorbar=dict(title='Distance (Å)')
     ))
     
-    # Update layout for better appearance
     fig.update_layout(
         title=dict(text='Distance matrix of selected atoms', font=dict(size=16)),
-        xaxis=dict(title='Contact Indices', tickfont=dict(size=10)),
-        yaxis=dict(title='Target Indices', tickfont=dict(size=10)),
+        xaxis=dict(title='Target Atoms', tickfont=dict(size=10)),
+        yaxis=dict(title='Central Atoms', tickfont=dict(size=10)),
         width=900,
         height=700,
         autosize=True
     )
     
-    # Save only HTML version - no need for kaleido
     if atom_type is not None:
         html_filename = os.path.join(output_dir, f"{atom_type}_heatmap_distance.html")
     else:
@@ -619,7 +660,7 @@ def plot_distance_heatmap(sub_dm_total, x_labels, y_labels, atom_type, output_di
     print(f"Interactive distance heatmap saved to {html_filename}")
 
 
-def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, output_dir="./"):
+def plot_contact_distance(sub_dm_total, contact_matrix, time_step, frame_skip, output_dir="./"):
     """
     Plots and saves a time series of the average contact distance over the trajectory using Plotly
     and also saves a static Matplotlib version as PNG.
@@ -632,7 +673,7 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
         Boolean 3D numpy array indicating which distances are considered contacts
     time_step : float
         Time between frames
-    skip_frames : int
+    frame_skip : int
         Number of frames skipped when processing
     output_dir : str, optional
         Directory where the output file will be saved (default: "./")
@@ -645,16 +686,15 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
     contact_count = np.sum(contact_matrix, axis=(1, 2))/np.shape(sub_dm_total)[1]
     average_distance_contacts = np.nanmean(contact_distance, axis=(1, 2))
 
-    x = np.arange(len(average_distance_contacts)) * time_step * skip_frames / 1000
+    x = np.arange(len(average_distance_contacts)) * time_step * frame_skip / 1000
+    
     valid_indices = ~np.isnan(average_distance_contacts)
     interpolated = np.interp(x, x[valid_indices], average_distance_contacts[valid_indices])
     mean_distance = np.mean(interpolated)
     mean_count = np.mean(contact_count)
     
-    # Create Plotly figure with dual y-axes (keep existing code)
     fig = go.Figure()
     
-    # Add average distance trace
     fig.add_trace(go.Scatter(
         x=x, 
         y=interpolated, 
@@ -664,7 +704,6 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
         yaxis='y'
     ))
     
-    # Add mean distance line
     fig.add_trace(go.Scatter(
         x=[x[0], x[-1]],
         y=[mean_distance, mean_distance],
@@ -674,7 +713,6 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
         yaxis='y'
     ))
     
-    # Add contact count trace
     fig.add_trace(go.Scatter(
         x=x, 
         y=contact_count, 
@@ -684,7 +722,6 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
         yaxis='y2'
     ))
     
-    # Add mean contact count line
     fig.add_trace(go.Scatter(
         x=[x[0], x[-1]],
         y=[mean_count, mean_count],
@@ -694,7 +731,6 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
         yaxis='y2'
     ))
     
-    # Set up dual y-axes with UPDATED title structure
     fig.update_layout(
         title='Average Distance of Contacts & Contact Count',
         xaxis=dict(
@@ -703,7 +739,7 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
             gridwidth=0.5
         ),
         yaxis=dict(
-            title=dict(  # Corrected nested structure
+            title=dict(  
                 text='Distance (Å)',
                 font=dict(color='blue')
             ),
@@ -712,7 +748,7 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
             gridwidth=0.5
         ),
         yaxis2=dict(
-            title=dict(  # Corrected nested structure
+            title=dict(  
                 text='Contact count per atom',
                 font=dict(color='red')
             ),
@@ -732,46 +768,37 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
         height=600
     )
     
-    # Save HTML version - no need for kaleido
     html_filename = os.path.join(output_dir, "average_contact_analysis.html")
     fig.write_html(html_filename)
     print(f"Interactive contact analysis chart saved to {html_filename}")
     
-    # CREATE MATPLOTLIB STATIC FIGURE
-    # Create a new figure with two y-axes
+
     fig_mpl, ax1 = plt.subplots(figsize=(10, 6))
     ax2 = ax1.twinx()
     
-    # Plot distance data on left axis
     line1 = ax1.plot(x, interpolated, 'o-', color='blue', label='Avg Dist', 
                      markersize=4, markevery=max(1, len(x)//20))
     ax1.axhline(y=mean_distance, color='blue', linestyle='--', 
                 label=f'Mean Distance: {mean_distance:.2f} Å')
     
-    # Plot contact count on right axis
     line2 = ax2.plot(x, contact_count, 'o-', color='red', label='Contact Count', 
                      markersize=4, markevery=max(1, len(x)//20))
     ax2.axhline(y=mean_count, color='red', linestyle='--', 
                 label=f'Mean Count: {mean_count:.1f}')
     
-    # Set labels and titles
     ax1.set_xlabel('Time (ps)', fontsize=12)
     ax1.set_ylabel('Distance (Å)', color='blue', fontsize=12)
     ax2.set_ylabel('Contact count per atom', color='red', fontsize=12)
     plt.title('Average Distance of Contacts & Contact Count', fontsize=14)
     
-    # Set tick colors
     ax1.tick_params(axis='y', labelcolor='blue')
     ax2.tick_params(axis='y', labelcolor='red')
     
-    # Add grid
     ax1.grid(True, alpha=0.3)
     
-    # Combine legends from both axes
     lines = line1 + line2
     labels = [l.get_label() for l in lines]
     
-    # Add legend with lines from both axes - ADJUSTED POSITION
     all_lines = line1 + line2 + [
         plt.Line2D([0], [0], color='blue', linestyle='--'),
         plt.Line2D([0], [0], color='red', linestyle='--')
@@ -781,17 +808,14 @@ def plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, 
         f'Mean Count: {mean_count:.1f}'
     ]
     
-    # Move legend lower to avoid overlap with x-axis labels
     fig_mpl.legend(all_lines, all_labels, loc='upper center', 
                   bbox_to_anchor=(0.5, -0.02), ncol=2)
     
-    # Add more padding at the bottom for the legend
     plt.tight_layout(pad=1.2)
     
-    # Save the figure as PNG with expanded bottom margin to include legend
     png_filename = os.path.join(output_dir, "average_contact_analysis.png")
     plt.savefig(png_filename, dpi=300, bbox_inches='tight')
-    plt.show()  # Added to display the plot
+    plt.show()  
     plt.close()
     
     print(f"Static contact analysis chart saved to {png_filename}")
@@ -818,23 +842,23 @@ def save_matrix_data(sub_dm_total, contact_matrix, output_dir="./"):
     np.save(os.path.join(output_dir, "contact_matrix.npy"), contact_matrix)
 
 
-def contacts(filename, target_atoms, contact_atoms, custom_cutoffs, skip_frames=10,
+def contacts(traj_path, central_atoms, target_atoms, custom_cutoffs, frame_skip=10,
              plot_distance_matrix=False, plot_contacts=False, time_step=None, save_data=False,
              output_dir="./", mic=True):
     """
-    Processes a molecular trajectory file to compute contacts between target and contact atoms.
+    Processes a molecular trajectory file to compute contacts between central and target atoms.
     
     Parameters
     ----------
-    filename : str
+    traj_path : str
         Path to the trajectory file
+    central_atoms : Union[str, List[Union[int, str]]]
+        Criteria for selecting central atoms being analyzed
     target_atoms : Union[str, List[Union[int, str]]]
-        Criteria for selecting target atoms
-    contact_atoms : Union[str, List[Union[int, str]]]
-        Criteria for selecting contact atoms
+        Criteria for selecting target atoms that interact with central atoms
     custom_cutoffs : Dict[Tuple[str, str], float]
         Dictionary with custom cutoff values for specific atom pairs
-    skip_frames : int, optional
+    frame_skip : int, optional
         Number of frames to skip (default: 10)
     plot_distance_matrix : bool, optional
         Boolean flag to plot average distance heatmap (default: False)
@@ -854,42 +878,37 @@ def contacts(filename, target_atoms, contact_atoms, custom_cutoffs, skip_frames=
     Tuple[np.ndarray, np.ndarray]
         3D numpy array of sub-distance matrices and Boolean 3D numpy array of contacts
     """
-    # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
     sub_dm_list = []
-    trajectory = read(filename, index=f"::{skip_frames}")
-
-    # Process frames in parallel
+    trajectory = read(traj_path, index=f"::{frame_skip}")
+    
     results = Parallel(n_jobs=-1)(
-        delayed(contacts_frame)(atoms, target_atoms, contact_atoms, custom_cutoffs, mic=mic)
+        delayed(contacts_frame)(atoms, central_atoms, target_atoms, custom_cutoffs, mic=mic)
         for atoms in trajectory
     )
 
-    sub_dm_list, cutoff_matrices, indices_target, indices_contact = zip(*results)
+    sub_dm_list, cutoff_matrices, indices_central, indices_target = zip(*results)
     cutoff_matrix = cutoff_matrices[0]
     sub_dm_total = np.array(sub_dm_list)
 
-    # Get atom type for labeling
-    atom_type = (target_atoms if isinstance(target_atoms, str)
-                 else chemical_symbols[target_atoms] if isinstance(target_atoms, int)
+    atom_type = (central_atoms if isinstance(central_atoms, str)
+                 else chemical_symbols[central_atoms] if isinstance(central_atoms, int)
                  else None)
                  
-    y_labels = [f"{trajectory[0].get_chemical_symbols()[i]}({i})" for i in indices_target[0]]
-    x_labels = [f"{trajectory[0].get_chemical_symbols()[i]}({i})" for i in indices_contact[0]]
+    y_labels = [f"{trajectory[0].get_chemical_symbols()[i]}({i})" for i in indices_central[0]]
+    x_labels = [f"{trajectory[0].get_chemical_symbols()[i]}({i})" for i in indices_target[0]]
 
     contact_matrix = sub_dm_total < cutoff_matrix
 
-    # Generate plots if requested
     if plot_contacts and time_step is not None:
-        plot_contact_heatmap(contact_matrix, skip_frames, time_step, x_labels, y_labels, atom_type,
+        plot_contact_heatmap(contact_matrix, frame_skip, time_step, x_labels, y_labels, atom_type,
                              output_dir=output_dir)
-        plot_contact_distance(sub_dm_total, contact_matrix, time_step, skip_frames, output_dir=output_dir)
+        plot_contact_distance(sub_dm_total, contact_matrix, time_step, frame_skip, output_dir=output_dir)
 
     if plot_distance_matrix:
         plot_distance_heatmap(sub_dm_total, x_labels, y_labels, atom_type, output_dir=output_dir)
 
-    # Save data files if requested
     if save_data:
         save_matrix_data(sub_dm_total, contact_matrix, output_dir=output_dir)
 

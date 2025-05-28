@@ -15,10 +15,80 @@ from ase.units import fs as fs_conversion
 from scipy.optimize import curve_fit
 import pandas as pd
 import os
+from joblib import Parallel, delayed, cpu_count
 
-def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0):
+def read_trajectory_chunk(traj_path, index_slice, frame_skip=1):
     """
-    Calculate Mean Square Displacement (MSD) vs time.
+    Read a chunk of trajectory data in parallel.
+    
+    Parameters
+    ----------
+    traj_path : str
+        Path to the trajectory file (supports any ASE-readable format)
+    index_slice : str
+        ASE index slice for reading a subset of frames
+    frame_skip : int, optional
+        Number of frames to skip (default: 1)
+        
+    Returns
+    -------
+    list
+        List of ASE Atoms objects for the specified chunk
+    """
+    try:
+        frames = ase.io.read(traj_path, index=index_slice)
+        if not isinstance(frames, list):
+            frames = [frames]
+        
+        frames = frames[::frame_skip]
+        return frames
+    except Exception as e:
+        print(f"Error reading trajectory chunk {index_slice}: {e}")
+        return []
+
+def calculate_frame_msd(frame_idx, current_frame, reference_frame, atom_indices, msd_direction=False):
+    """
+    Calculate MSD for a single frame.
+    
+    Parameters
+    ----------
+    frame_idx : int
+        Index of the current frame
+    current_frame : ase.Atoms
+        Current frame
+    reference_frame : ase.Atoms
+        Reference frame
+    atom_indices : list
+        List of atom indices to include in MSD calculation
+    msd_direction : bool, optional
+        Whether to calculate directional MSD (default: False)
+        
+    Returns
+    -------
+    tuple
+        If msd_direction is False: (frame_idx, msd_value)
+        If msd_direction is True: (frame_idx, msd_x, msd_y, msd_z)
+    """
+    atom_positions_current = current_frame.positions[atom_indices]
+    atom_positions_reference = reference_frame.positions[atom_indices]
+    displacements = atom_positions_current - atom_positions_reference
+    
+    if not msd_direction:
+        # Calculate total MSD
+        msd_value = np.sum(np.square(displacements)) / (3 * len(atom_indices))
+        return frame_idx, msd_value
+    else:
+        # Directional MSDs
+        msd_x = np.sum(displacements[:, 0]**2) / len(atom_indices)
+        msd_y = np.sum(displacements[:, 1]**2) / len(atom_indices)
+        msd_z = np.sum(displacements[:, 2]**2) / len(atom_indices)
+        
+        return frame_idx, msd_x, msd_y, msd_z
+
+def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0, n_jobs=-1, 
+                 msd_direction=False, msd_direction_atom=None):
+    """
+    Calculate Mean Square Displacement (MSD) vs time using parallel processing.
     
     Parameters
     ----------
@@ -30,137 +100,339 @@ def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0):
         Indices of atoms to analyze (default: all atoms)
     ignore_n_images : int, optional
         Number of initial images to ignore (default: 0)
-    
+    n_jobs : int, optional
+        Number of parallel jobs to run (default: -1, use all available cores)
+    msd_direction : bool, optional
+        Whether to calculate directional MSD (default: False)
+        If True and atom_indices is provided, directional MSD is calculated for those indices
+    msd_direction_atom : str or int, optional
+        Atom symbol or atomic number to filter for directional MSD (default: None)
+        Only used when atom_indices is None
+        
     Returns
     -------
-    tuple
-        (msd_values, msd_times) where msd_values are Mean square displacement values
-        and msd_times are corresponding time values in femtoseconds
-    """
-    # Initialize parameters
-    if atom_indices is None:
-        atom_indices = list(range(len(traj[0])))
+    tuple or dict
+        If atom_indices is provided: (msd_times, msd_x, msd_y, msd_z) if msd_direction=True
+                                else (msd_values, msd_times) 
+    If atom_indices is None: A dictionary with keys for each atom type
     
-    # Calculate time values
+"""
+    # Time values
     total_images = len(traj) - ignore_n_images
     timesteps = np.linspace(0, total_images * timestep, total_images + 1)
     msd_times = timesteps[:-1] / fs_conversion  # Convert to femtoseconds
     
-    # Calculate MSD
-    msd_values = np.zeros(total_images)
-    for i in range(ignore_n_images, len(traj)):
-        idx = i - ignore_n_images
-        displacements = np.zeros(3)
-        
-        for atom_idx in atom_indices:
-            displacement = traj[i].positions[atom_idx] - traj[ignore_n_images].positions[atom_idx]
-            displacements += np.square(displacement)
-            
-        # Average MSD over all atoms
-        msd_values[idx] = np.sum(displacements) / (3 * len(atom_indices))
+    # Reference frame
+    reference_frame = traj[ignore_n_images]
     
-    return msd_values, msd_times
+    if n_jobs == -1:
+        n_jobs = cpu_count()
+    
+    direction_indices = None
+    if msd_direction and msd_direction_atom is not None:
+        atoms = traj[0]
+        if isinstance(msd_direction_atom, str):
+            # An atom symbol (e.g., 'O')
+            symbols = atoms.get_chemical_symbols()
+            direction_indices = [i for i, s in enumerate(symbols) if s == msd_direction_atom]
+            print(f"Calculating directional MSD for {len(direction_indices)} {msd_direction_atom} atoms")
+        elif isinstance(msd_direction_atom, int):
+            # An atomic number (e.g., 8 for oxygen)
+            atomic_numbers = atoms.get_atomic_numbers()
+            direction_indices = [i for i, z in enumerate(atomic_numbers) if z == msd_direction_atom]
+            from ase.data import chemical_symbols
+            symbol = chemical_symbols[msd_direction_atom]
+            print(f"Calculating directional MSD for {len(direction_indices)} {symbol} atoms (Z={msd_direction_atom})")
+    
+    # MSD for those atoms
+    if atom_indices is not None:
+        do_direction = msd_direction
+        
+        # Parallelize MSD calculation
+        results = Parallel(n_jobs=n_jobs)(
+            delayed(calculate_frame_msd)(
+                i - ignore_n_images, 
+                traj[i], 
+                reference_frame, 
+                atom_indices,
+                do_direction
+            )
+            for i in range(ignore_n_images, len(traj))
+        )
+        
+        # Sort results by frame index and extract MSD values
+        results.sort(key=lambda x: x[0])
+        
+        if do_direction:
+            print(f"Calculating directional MSD for {len(atom_indices)} specified atoms")
+            msd_x = np.array([r[1] for r in results])
+            msd_y = np.array([r[2] for r in results])
+            msd_z = np.array([r[3] for r in results])
+            return msd_times, msd_x, msd_y, msd_z
+        else:
+            msd_values = np.array([r[1] for r in results])
+            return msd_values, msd_times
+    
+    # MSD per atom type
+    else:
+        atoms = traj[0]
+        symbols = atoms.get_chemical_symbols()
+        unique_symbols = set(symbols)
+        
+        # A dictionary mapping symbols to their indices
+        symbol_indices = {symbol: [i for i, s in enumerate(symbols) if s == symbol] 
+                         for symbol in unique_symbols}
+        
+        # Overall MSD using all atoms
+        all_indices = list(range(len(atoms)))
+        
+        overall_results = Parallel(n_jobs=n_jobs)(
+            delayed(calculate_frame_msd)(
+                i - ignore_n_images, 
+                traj[i], 
+                reference_frame, 
+                all_indices,
+                False  
+            )
+            for i in range(ignore_n_images, len(traj))
+        )
+        
+        # Sort results by frame index and extract MSD values
+        overall_results.sort(key=lambda x: x[0])
+        overall_msd = np.array([r[1] for r in overall_results])
+        
+        # Dictionary to store MSD results
+        result = {'overall': (overall_msd, msd_times)}
+        
+        # Calculate MSD for each atom type in parallel
+        for symbol, indices in symbol_indices.items():
+            print(f"Calculating MSD for {symbol} atoms...")
+            calc_direction = msd_direction and (
+                (isinstance(msd_direction_atom, str) and symbol == msd_direction_atom) or
+                (isinstance(msd_direction_atom, int) and 
+                 atoms.get_atomic_numbers()[indices[0]] == msd_direction_atom)
+            )
+            
+            symbol_results = Parallel(n_jobs=n_jobs)(
+                delayed(calculate_frame_msd)(
+                    i - ignore_n_images, 
+                    traj[i], 
+                    reference_frame, 
+                    indices,
+                    calc_direction
+                )
+                for i in range(ignore_n_images, len(traj))
+            )
+            
+            # Sort results by frame index
+            symbol_results.sort(key=lambda x: x[0])
+            
+            if calc_direction:
+                msd_x = np.array([r[1] for r in symbol_results])
+                msd_y = np.array([r[2] for r in symbol_results])
+                msd_z = np.array([r[3] for r in symbol_results])
+                
+                result[symbol] = (msd_times)
+                result[f'{symbol}_x'] = (msd_x, msd_times)
+                result[f'{symbol}_y'] = (msd_y, msd_times)
+                result[f'{symbol}_z'] = (msd_z, msd_times)
+                
+                print(f"Saved directional MSD data for {symbol} atoms")
+            else:
+                msd_values = np.array([r[1] for r in symbol_results])
+                result[symbol] = (msd_values, msd_times)
+        
+        return result
 
-def save_msd_data(msd_times, msd_values, csv_file_path):
+def save_msd_data(msd_data, csv_file_path, output_dir="traj_csv_detailed"):
     """
-    Save MSD data to a CSV file.
+    Save MSD data to CSV files.
     
     Parameters
     ----------
-    msd_times : numpy.ndarray
-        Time values in femtoseconds
-    msd_values : numpy.ndarray
-        Mean square displacement values
+    msd_data : tuple or dict
+        MSD data to be saved
     csv_file_path : str
-        Path to save the CSV file
+        Path to the CSV file
+    output_dir : str, optional
+        Directory to save CSV files (default: "traj_csv_detailed")
         
     Returns
     -------
-    None
+    list
+        List of saved file paths
     """
-    with open(csv_file_path, 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(['Time (fs)', 'MSD'])
-        for time, msd in zip(msd_times, msd_values):
-            csv_writer.writerow([time, msd])
+    saved_files = []
     
-    print(f"MSD data has been saved to {csv_file_path}")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    base_filename = os.path.basename(csv_file_path)
+    
+    if isinstance(msd_data, tuple):
+        if len(msd_data) == 2:
+            msd_values, msd_times = msd_data
+            
+            csv_full_path = os.path.join(output_dir, base_filename)
+            
+            with open(csv_full_path, 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['Time (fs)', 'MSD'])
+                for time, msd in zip(msd_times, msd_values):
+                    csv_writer.writerow([time, msd])
+            
+            print(f"MSD data has been saved to {csv_full_path}")
+            saved_files.append(csv_full_path)
+        
+        elif len(msd_data) == 4:
+            msd_times, msd_x, msd_y, msd_z = msd_data
+            
+            base_path, ext = os.path.splitext(base_filename)
+            
+            total_path = os.path.join(output_dir, base_filename)
+            with open(total_path, 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['Time (fs)', 'MSD'])
+                for time, msd in zip(msd_times, msd_values):
+                    csv_writer.writerow([time, msd])
+            print(f"Total MSD data has been saved to {total_path}")
+            saved_files.append(total_path)
+            
+            x_path = os.path.join(output_dir, f"{base_path}_x{ext}")
+            with open(x_path, 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['Time (fs)', 'MSD'])  
+                for time, msd in zip(msd_times, msd_x):
+                    csv_writer.writerow([time, msd])
+            print(f"X-direction MSD data has been saved to {x_path}")
+            saved_files.append(x_path)
+            
+            y_path = os.path.join(output_dir, f"{base_path}_y{ext}")
+            with open(y_path, 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['Time (fs)', 'MSD'])  
+                for time, msd in zip(msd_times, msd_y):
+                    csv_writer.writerow([time, msd])
+            print(f"Y-direction MSD data has been saved to {y_path}")
+            saved_files.append(y_path)
+            
+            z_path = os.path.join(output_dir, f"{base_path}_z{ext}")
+            with open(z_path, 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['Time (fs)', 'MSD'])  
+                for time, msd in zip(msd_times, msd_z):
+                    csv_writer.writerow([time, msd])
+            print(f"Z-direction MSD data has been saved to {z_path}")
+            saved_files.append(z_path)
+    
+    elif isinstance(msd_data, dict):
+        base_name, ext = os.path.splitext(base_filename)
+        
+        if 'overall' in msd_data:
+            overall_filename = f"{base_name}_overall{ext}"
+            overall_path = os.path.join(output_dir, overall_filename)
+            msd_values, msd_times = msd_data['overall']
+            
+            with open(overall_path, 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['Time (fs)', 'MSD'])
+                for time, msd in zip(msd_times, msd_values):
+                    csv_writer.writerow([time, msd])
+            
+            print(f"Overall MSD data has been saved to {overall_path}")
+            saved_files.append(overall_path)
+        
+        for symbol, data in msd_data.items():
+            if symbol == 'overall':
+                continue
+                
+            symbol_filename = f"{base_name}_{symbol}{ext}"
+            symbol_path = os.path.join(output_dir, symbol_filename)
+            msd_values, msd_times = data
+            
+            with open(symbol_path, 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(['Time (fs)', 'MSD'])
+                for time, msd in zip(msd_times, msd_values):
+                    csv_writer.writerow([time, msd])
+            
+            print(f"MSD data for {symbol} atoms has been saved to {symbol_path}")
+            saved_files.append(symbol_path)
+    
+    return saved_files
 
 def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end_index=None, 
-                                   with_intercept=False, plot_msd=False):
+                                   with_intercept=False, plot_msd=False, dimension=3):
     """
-    Calculate diffusion coefficient from MSD data.
+    Calculate diffusion coefficient from MSD data in a general way for 1D, 2D, or 3D.
     
     Parameters
     ----------
     msd_times : numpy.ndarray
-        Time values in femtoseconds
+        Time values in femtoseconds.
     msd_values : numpy.ndarray
-        Mean square displacement values
+        Mean square displacement values.
     start_index : int, optional
-        Starting index for the fit (default: 1/3 of data length)
+        Starting index for the fit (default: 1/3 of data length).
     end_index : int, optional
-        Ending index for the fit (default: None)
+        Ending index for the fit (default: None).
     with_intercept : bool, optional
-        Whether to fit with intercept (default: False)
+        Whether to fit with intercept (default: False).
     plot_msd : bool, optional
-        Whether to plot the fit (default: False)
+        Whether to plot the fit (default: False).
+    dimension : int, optional
+        Dimensionality of the system (default: 3). Use 1 for 1D, 2 for 2D, 3 for 3D.
     
     Returns
     -------
     tuple
-        (D, error) where D is the diffusion coefficient in cm²/s and error is the statistical error
+        (D, error) where D is the diffusion coefficient in cm²/s and error is the statistical error.
     """
-    # Set default indices if not provided
     if start_index is None:
-        start_index = len(msd_times) // 3  # Start at 1/3 of the data by default
-    
+        start_index = len(msd_times) // 3  
     if end_index is None:
         end_index = len(msd_times)
-    
-    # Ensure the indices are valid
     if start_index < 0 or end_index > len(msd_times):
         raise ValueError("Indices are out of bounds.")
     if start_index >= end_index:
         raise ValueError("Start index must be less than end index.")
     
-    # Get the data to fit
     x_fit = msd_times[start_index:end_index]
     y_fit = msd_values[start_index:end_index]
     
-    # Define the linear models
     def linear_no_intercept(x, m):
         return m * x
     
     def linear_with_intercept(x, m, c):
         return m * x + c
     
-    # Perform the fit
     if with_intercept:
         params, covariance = curve_fit(linear_with_intercept, x_fit, y_fit)
         slope, intercept = params
         fit_func = lambda x: linear_with_intercept(x, slope, intercept)
-        label = f'D = {slope * 10**-5:.2e} cm²/s'
     else:
         params, covariance = curve_fit(linear_no_intercept, x_fit, y_fit)
         slope = params[0]
         intercept = 0
         fit_func = lambda x: linear_no_intercept(x, slope)
-        label = f'D = {slope * 10**-5:.2e} cm²/s'
     
-    # Calculate error
     std_err = np.sqrt(np.diag(covariance))[0]
     
-    # Calculate diffusion coefficient (D = slope/6 * 10^-5)
-    D = slope * 10**-5
-    error = std_err * 10**-5
+    # Calculate diffusion coefficient using D = slope / (2 * dimension)
+    # Correct conversion from Å²/fs to cm²/s:
+    # 1 Å = 10^-8 cm, 1 Å² = 10^-16 cm²
+    # 1 fs = 10^-15 s
+    # (Å²/fs) * (10^-16 cm²/Å²) / (10^-15 s/fs) = 10^-1 cm²/s
+    conversion_angstrom2_fs_to_cm2_s = 0.1  
+    D = slope / (2 * dimension) * conversion_angstrom2_fs_to_cm2_s
+    error = std_err / (2 * dimension) * conversion_angstrom2_fs_to_cm2_s
     
-    # Plot if requested
     if plot_msd:
         plt.figure(figsize=(10, 6))
-        plt.scatter(msd_times, msd_values, s=10, alpha=0.5, label='MSD data')
-        plt.plot(x_fit, fit_func(x_fit), 'r-', linewidth=2, label=label)
-        plt.xlabel('Time (fs)')
+        # Convert time from fs to ps for plotting
+        plt.scatter(msd_times/1000, msd_values, s=10, alpha=0.5, label='MSD data')
+        plt.plot(x_fit/1000, fit_func(x_fit), 'r-', linewidth=2, 
+                 label=f'D = {D:.2e} cm²/s')
+        plt.xlabel('Time (ps)')
         plt.ylabel('MSD (Å²)')
         plt.title('Mean Square Displacement vs Time')
         plt.grid(True, alpha=0.3)
@@ -170,22 +442,114 @@ def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end
         plt.show()
     
     print(f'Diffusion Coefficient: {D:.2e} cm²/s')
-    print(f'Error: {error:.2e} cm²/s')
+    print(f'Error in the Fit: {error:.2e} cm²/s')
     
     return D, error
 
-def calculate_save_msd(traj_file, timestep_value, indices_file=None, 
-                      ignore_n_images=0, output_file="msd_results.csv", frame_skip=1):
+def plot_diffusion_time_series(msd_times, msd_values, min_window=10, with_intercept=False, csv_file=None, dimension=3):
+    """
+    Plot diffusion coefficient as a time series by calculating it over different time windows.
+    
+    Parameters
+    ----------
+    msd_times : numpy.ndarray
+        Time values in femtoseconds
+    msd_values : numpy.ndarray
+        Mean square displacement values in Å²
+    min_window : int, optional
+        Minimum window size for calculating diffusion (default: 10)
+    with_intercept : bool, optional
+        Whether to fit with intercept (default: False)
+    csv_file : str, optional
+        Path to the CSV file, used for output filename (default: None)
+    dimension : int, optional
+        Dimensionality of the system: 1 for 1D, 2 for 2D, 3 for 3D (default: 3)
+    
+    Returns
+    -------
+    None
+    """
+    
+    def linear_no_intercept(x, m):
+        return m * x
+        
+    def linear_with_intercept(x, m, c):
+        return m * x + c
+    
+    # Conversion from Å²/fs to Å²/ps
+    # 1 ps = 1000 fs, so multiply by 1000
+    conversion_fs_to_ps = 1000.0  
+    
+    diffusion_coeffs = []
+    window_ends = []
+        
+    for end_idx in range(min_window + 1, len(msd_times)):
+        x_fit = msd_times[:end_idx]
+        y_fit = msd_values[:end_idx]
+        
+        try:
+            if with_intercept:
+                params, covariance = curve_fit(linear_with_intercept, x_fit, y_fit)
+                slope = params[0]
+            else:
+                params, covariance = curve_fit(linear_no_intercept, x_fit, y_fit)
+                slope = params[0]
+                
+            D = slope / (2 * dimension) * conversion_fs_to_ps
+            
+            diffusion_coeffs.append(D)
+            window_ends.append(msd_times[end_idx-1])
+        except:
+            continue
+    
+    plt.figure(figsize=(10, 6))
+    
+    window_ends_ps = np.array(window_ends) / 1000.0
+    
+    # Plot diffusion coefficient vs. time
+    plt.plot(window_ends_ps, diffusion_coeffs, 'b-', linewidth=2, label='Diffusion Coefficient')
+    
+    if len(diffusion_coeffs) > 1:
+        avg_diffusion = np.mean(diffusion_coeffs)
+        std_diffusion = np.std(diffusion_coeffs, ddof=1)  
+        plt.axhline(y=avg_diffusion, color='r', linestyle='--', 
+                   label=f'Average D = {avg_diffusion:.2e} ± {std_diffusion:.2e} Å²/ps')
+        
+        plt.axhspan(avg_diffusion - std_diffusion, avg_diffusion + std_diffusion, 
+                   color='r', alpha=0.2)
+    
+    plt.xlabel('Time Window End (ps)')
+    plt.ylabel('Diffusion Coefficient (Å²/ps)')
+    plt.title(f'{dimension}D Diffusion Coefficient Evolution Over Time')
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    
+    output_file = 'diffusion_time_series.png'
+    if csv_file:
+        dir_name = os.path.dirname(csv_file)
+        base_name = os.path.splitext(os.path.basename(csv_file))[0]
+        output_file = os.path.join(dir_name, f"{base_name}_{dimension}D_diffusion_evolution.png")
+    
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    print(f"Diffusion coefficient evolution plot saved to: {output_file}")
+
+def calculate_save_msd(traj_path, timestep_fs, indices_path=None, 
+                      ignore_n_images=0, output_file="msd_results.csv", 
+                      frame_skip=1, n_jobs=-1, output_dir="traj_csv_detailed",
+                      msd_direction=False, msd_direction_atom=None):
     """
     Calculate MSD data and save to CSV file.
     
     Parameters
     ----------
-    traj_file : str
+    traj_path : str
         Path to the ASE trajectory file
-    timestep_value : float
-        Simulation timestep in ASE time units
-    indices_file : str, optional
+    timestep_fs : float
+        Simulation timestep in femtoseconds (fs)
+    indices_path : str, optional
         Path to file containing atom indices (default: None)
     ignore_n_images : int, optional
         Number of initial images to ignore (default: 0)
@@ -193,75 +557,98 @@ def calculate_save_msd(traj_file, timestep_value, indices_file=None,
         Output CSV file path (default: "msd_results.csv")
     frame_skip : int, optional
         Number of frames to skip between samples (default: 1)
-    
+    n_jobs : int, optional
+        Number of parallel jobs to run (default: -1, use all available cores)
+    output_dir : str, optional
+        Directory to save CSV files (default: "traj_csv_detailed")
+    msd_direction : bool, optional
+        Whether to calculate directional MSD (default: False)
+    msd_direction_atom : str or int, optional
+        Atom symbol or atomic number for directional analysis (default: None)
+        
     Returns
     -------
-    tuple
-        (msd_values, msd_times) - MSD values and corresponding time values
+    tuple or dict
+        MSD values and corresponding time values
     """
-    # Load trajectory file
     try:
-        full_traj = ase.io.read(traj_file, ':')
-        print(f"Loaded full trajectory with {len(full_traj)} frames")
+        traj = ase.io.read(traj_path, index=f'::{frame_skip}')
+        if not isinstance(traj, list):
+            traj = [traj]
         
-        # Create new trajectory with frame skipping
-        traj = []
-        for i in range(0, len(full_traj), frame_skip):
-            traj.append(full_traj[i])
+        print(f"Loaded {len(traj)} frames after applying frame_skip={frame_skip}")
         
-        print(f"Using {len(traj)} frames after skipping every {frame_skip} frames")
     except Exception as e:
         print(f"Error loading trajectory file: {e}")
         return None, None
 
-    # Load atom indices if specified
     atom_indices = None
-    if indices_file:
+    if indices_path:
         try:
-            atom_indices = np.load(indices_file)
+            atom_indices = np.load(indices_path)
             print(f"Loaded {len(atom_indices)} atom indices")
         except Exception as e:
             print(f"Error loading atom indices: {e}")
             return None, None
 
-    timestep = timestep_value 
-    print(f"Using adjusted timestep: {timestep/fs} * fs (original: {timestep_value/fs} * fs)")
+    timestep = timestep_fs * fs
+    print(f"Using timestep: {timestep_fs} fs")
 
-    # Calculate MSD
-    print("Calculating MSD...")
-    msd_values, msd_times = calculate_msd(
-        traj=traj, 
-        timestep=timestep,
-        atom_indices=atom_indices,
-        ignore_n_images=ignore_n_images
-    )
+    print("Calculating MSD using parallel processing...")
+    if indices_path:
+        msd_data = calculate_msd(
+            traj=traj, 
+            timestep=timestep,
+            atom_indices=atom_indices,
+            ignore_n_images=ignore_n_images,
+            n_jobs=n_jobs,
+            msd_direction=msd_direction
+        )
+    else:
+        msd_data = calculate_msd(
+            traj=traj, 
+            timestep=timestep,
+            atom_indices=atom_indices,
+            ignore_n_images=ignore_n_images,
+            n_jobs=n_jobs,
+            msd_direction=msd_direction,
+            msd_direction_atom=msd_direction_atom
+        )
 
-    # Save MSD data
-    save_msd_data(
-        msd_times=msd_times, 
-        msd_values=msd_values, 
-        csv_file_path=output_file
+    saved_files = save_msd_data(
+        msd_data=msd_data, 
+        csv_file_path=output_file,
+        output_dir=output_dir
     )
     
-    return msd_values, msd_times
+    return msd_data
 
-def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None, 
-                    with_intercept=False, plot_msd=False):
+def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None, dimension=3,
+                    with_intercept=False, plot_msd=False, plot_diffusion=False,
+                    use_block_averaging=False, n_blocks=10):
     """
-    Analyze MSD data from a CSV file.
+    Analyze MSD data from a CSV file with block averaging by default.
     
     Parameters
     ----------
     csv_file : str, optional
         Path to the CSV file containing MSD data (default: "msd_results.csv")
     fit_start : int, optional
-        Start index for fitting (default: None)
+        Start index for fitting or visualization if using block averaging (default: None)
     fit_end : int, optional
-        End index for fitting (default: None)
+        End index for fitting or visualization if using block averaging (default: None)
+    dimension : int, optional
+        Dimensionality of the system: 1 for 1D, 2 for 2D, 3 for 3D (default: 3)
     with_intercept : bool, optional
         Whether to fit with intercept (default: False)
     plot_msd : bool, optional
         Whether to plot MSD vs time (default: False)
+    plot_diffusion : bool, optional
+        Whether to plot diffusion coefficient as time series (default: False)
+    use_block_averaging : bool, optional
+        Whether to use block averaging for error estimation (default: True)
+    n_blocks : int, optional
+        Number of blocks for block averaging (default: 10)
     
     Returns
     -------
@@ -269,7 +656,6 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None,
         (D, error) where D is the diffusion coefficient in cm²/s and error is the statistical error
     """
     try:
-        # Load MSD data from CSV
         df = pd.read_csv(csv_file)
         print(f"Loaded MSD data from {csv_file}")
         
@@ -277,40 +663,98 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None,
         msd_times = df['Time (fs)'].values
         msd_values = df['MSD'].values
         
-        # Calculate diffusion coefficient
-        D, error = calculate_diffusion_coefficient(
-            msd_times=msd_times, 
-            msd_values=msd_values, 
-            start_index=fit_start, 
-            end_index=fit_end, 
-            with_intercept=with_intercept, 
-            plot_msd=plot_msd
-        )
+        # Diffusion coefficient
+        if use_block_averaging:
+            D, error = block_averaging_error(
+                msd_times=msd_times, 
+                msd_values=msd_values,
+                n_blocks=n_blocks,
+                dimension=dimension,
+                with_intercept=with_intercept
+            )
+            
+            print(f"Using block averaging method with {n_blocks} blocks")
+            
+            # Plot MSD with the block averaging diffusion coefficient
+            if plot_msd:
+                visualization_start = fit_start if fit_start is not None else int(len(msd_times) * 0.3)
+                visualization_end = fit_end if fit_end is not None else int(len(msd_times) * 0.8)
+                
+                plt.figure(figsize=(10, 6))
+                plt.scatter(msd_times/1000, msd_values, s=10, alpha=0.5, label='MSD data')
+                
+                x_fit = msd_times[visualization_start:visualization_end]
+                if with_intercept:
+                    slope = 2 * dimension * D / 0.1  # Convert from cm²/s to Å²/fs
+                    y_fit = msd_values[visualization_start:visualization_end]
+                    residuals = y_fit - (slope * x_fit)
+                    intercept = np.mean(residuals)
+                    fit_line = slope * x_fit + intercept
+                else:
+                    slope = 2 * dimension * D / 0.1
+                    fit_line = slope * x_fit
+                
+                plt.plot(x_fit/1000, fit_line, 'r-', linewidth=2, 
+                        label=f'Block Avg: D = ({D:.2e} ± {error:.2e}) cm²/s')
+                plt.xlabel('Time (ps)')
+                plt.ylabel('MSD (Å²)')
+                plt.title('Mean Square Displacement vs Time')
+                plt.grid(True, alpha=0.3)
+                plt.legend()
+                
+                dir_name = os.path.dirname(csv_file)
+                base_name = os.path.splitext(os.path.basename(csv_file))[0]
+                output_file = os.path.join(dir_name, f"{base_name}_msd_block_avg.png")
+                plt.tight_layout()
+                plt.savefig(output_file, dpi=300, bbox_inches='tight')
+                plt.show()
+                print(f"MSD plot saved to: {output_file}")
+        else:
+            D, error = calculate_diffusion_coefficient(
+                msd_times=msd_times, 
+                msd_values=msd_values, 
+                start_index=fit_start, 
+                end_index=fit_end, 
+                with_intercept=with_intercept, 
+                plot_msd=plot_msd,
+                dimension=dimension
+            )
+        
+        if plot_diffusion:
+            plot_diffusion_time_series(msd_times, msd_values, 10, with_intercept, csv_file, dimension)
+        
+        method = "Block Averaging" if use_block_averaging else "Standard Fit"
+        print(f"\nMSD Analysis Results ({method}):")
+        # Standard Error of the Mean = error
+        print(f"Diffusion Coefficient: D = {D:.4e} ± {error:.4e} cm²/s ({100*error/D:.1f}%)")
         
         return D, error
         
     except Exception as e:
         print(f"Error analyzing MSD data: {e}")
+        import traceback
+        traceback.print_exc()
         return None, None
 
-def msd_analysis(traj_file, timestep_value, indices_file=None, ignore_n_images=0,
-                output_dir="msd_results", frame_skip=10, fit_start=None, fit_end=None,
-                with_intercept=False, plot_msd=True):
+def msd_analysis(traj_path, timestep_fs, indices_path=None, ignore_n_images=0,
+                output_dir=None, frame_skip=10, fit_start=None, fit_end=None,
+                with_intercept=False, plot_msd=False, save_csvs_in_subdir=False,
+                msd_direction=False, msd_direction_atom=None, dimension=3):
     """
-    Perform complete MSD analysis workflow: calculate MSD, save data, and analyze diffusion.
+    Perform MSD analysis workflow: calculate MSD and save data.
     
     Parameters
     ----------
-    traj_file : str
+    traj_path : str
         Path to the ASE trajectory file
-    timestep_value : float
-        Simulation timestep in ASE time units
-    indices_file : str, optional
+    timestep_fs : float
+        Simulation timestep in femtoseconds (fs)
+    indices_path : str, optional
         Path to file containing atom indices (default: None)
     ignore_n_images : int, optional
         Number of initial images to ignore (default: 0)
     output_dir : str, optional
-        Directory to save output files (default: "msd_results")
+        Directory to save output files (default: based on trajectory filename)
     frame_skip : int, optional
         Number of frames to skip between samples (default: 10)
     fit_start : int, optional
@@ -320,72 +764,140 @@ def msd_analysis(traj_file, timestep_value, indices_file=None, ignore_n_images=0
     with_intercept : bool, optional
         Whether to fit with intercept (default: False)
     plot_msd : bool, optional
-        Whether to plot results (default: True)
+        Whether to plot results (default: False)
+    save_csvs_in_subdir : bool, optional
+        Whether to save CSV files in a subdirectory (default: False)
+    msd_direction : bool, optional
+        Whether to calculate directional MSD (default: False)
+    msd_direction_atom : str or int, optional
+        Atom symbol or atomic number for directional analysis (default: None)
         
     Returns
     -------
     dict
-        Dictionary containing MSD values, times, diffusion coefficient and error
+        Dictionary containing MSD values, times, output directory, and optionally diffusion coefficient
     """
-    # Create output directory if it doesn't exist
+    if output_dir is None:
+        traj_basename = os.path.splitext(os.path.basename(traj_path))[0]
+        output_dir = f"msd_{traj_basename}"
+        print(f"Using trajectory-based output directory: {output_dir}")
+    
     os.makedirs(output_dir, exist_ok=True)
     
-    # Define output CSV path
     csv_path = os.path.join(output_dir, "msd_data.csv")
     
-    # Convert timestep to ASE units if needed
-    if timestep_value < 1:  # Assuming user provided in fs
-        timestep = timestep_value * fs
-    else:
-        timestep = timestep_value
+    csv_dir = os.path.join(output_dir, "csv_data") if save_csvs_in_subdir else output_dir
     
-    # Calculate and save MSD data
-    msd_values, msd_times = calculate_save_msd(
-        traj_file=traj_file,
-        timestep_value=timestep,
-        indices_file=indices_file,
+    # Calculate and save MSD data (passing timestep directly in fs)
+    msd_data = calculate_save_msd(
+        traj_path=traj_path,
+        timestep_fs=timestep_fs,
+        indices_path=indices_path,
         ignore_n_images=ignore_n_images,
         output_file=csv_path,
-        frame_skip=frame_skip
+        frame_skip=frame_skip,
+        output_dir=csv_dir,
+        msd_direction=msd_direction,
+        msd_direction_atom=msd_direction_atom
     )
     
-    if msd_values is None or msd_times is None:
-        print("Failed to calculate MSD.")
-        return None
+    if isinstance(msd_data, tuple) and msd_data[0] is None:
+        print("Error: Failed to calculate MSD data")
+        return {"error": "Failed to calculate MSD data"}
     
-    # Calculate diffusion coefficient
-    D, error = calculate_diffusion_coefficient(
-        msd_times=msd_times,
-        msd_values=msd_values,
-        start_index=fit_start,
-        end_index=fit_end,
-        with_intercept=with_intercept,
-        plot_msd=plot_msd
-    )
+    # Extract MSD values and times for return value
+    if isinstance(msd_data, dict):
+        if 'overall' in msd_data:
+            msd_values, msd_times = msd_data['overall']
+        else:
+            # Use the first atom type's data
+            first_symbol = next(iter(msd_data))
+            msd_values, msd_times = msd_data[first_symbol]
+    else:
+        if len(msd_data) == 4:
+            msd_times, msd_x, msd_y, msd_z = msd_data
+        else:
+            msd_values, msd_times = msd_data
     
-    # Save summary to text file
-    summary_path = os.path.join(output_dir, "msd_summary.txt")
-    with open(summary_path, 'w') as f:
-        f.write("Mean Square Displacement (MSD) Analysis Summary\n")
-        f.write("=============================================\n\n")
-        f.write(f"Trajectory file: {traj_file}\n")
-        f.write(f"Timestep: {timestep/fs} fs\n")
-        f.write(f"Frame skip: {frame_skip}\n")
-        if indices_file:
-            f.write(f"Atom indices file: {indices_file}\n")
-        f.write(f"Number of frames analyzed: {len(msd_values)}\n\n")
-        f.write(f"Diffusion Coefficient: {D:.6e} cm²/s\n")
-        f.write(f"Statistical Error: {error:.6e} cm²/s\n")
-        if fit_start is not None and fit_end is not None:
-            f.write(f"Fit range: {fit_start} to {fit_end}\n")
-        f.write(f"Fit with intercept: {with_intercept}\n")
-    
-    print(f"Analysis summary saved to {summary_path}")
-    
-    # Return results as dictionary
-    return {
+    result_dict = {
         "msd_values": msd_values,
         "msd_times": msd_times,
-        "diffusion_coefficient": D,
-        "error": error
+        "output_dir": output_dir
     }
+    
+    # Diffusion coefficient analyzing the CSV file
+    if fit_start is not None or fit_end is not None or plot_msd:
+        try:
+            print("Calculating diffusion coefficient...")
+            D, error = calculate_diffusion_coefficient(
+                msd_times=msd_times,
+                msd_values=msd_values,
+                start_index=fit_start,
+                end_index=fit_end,
+                with_intercept=with_intercept,
+                plot_msd=plot_msd,
+                dimension=dimension
+            )
+            
+            if D is not None:
+                result_dict["diffusion_coefficient"] = D
+                result_dict["error"] = error
+                print(f"Calculated diffusion coefficient: {D:.2e} cm²/s")
+        except Exception as e:
+            print(f"Error calculating diffusion coefficient: {e}")
+    
+    return result_dict
+
+def block_averaging_error(msd_times, msd_values, n_blocks=5, dimension=3, **kwargs):
+    """
+    Calculate diffusion coefficient error using block averaging.
+    
+    Parameters
+    ----------
+    msd_times : numpy.ndarray
+        Time values in femtoseconds
+    msd_values : numpy.ndarray
+        MSD values
+    n_blocks : int
+        Number of blocks to divide the data into
+    dimension : int
+        Dimensionality of the system (default: 3)
+    
+    Returns
+    -------
+    tuple
+        (mean_D, std_error_D) - mean diffusion coefficient and its standard error
+    """
+    # Block size
+    block_size = len(msd_times) // n_blocks
+    if block_size < 10:
+        print(f"Warning: Block size is small ({block_size} points). Consider using fewer blocks.")
+    
+    # D for each block
+    D_values = []
+    for i in range(n_blocks):
+        start_idx = i * block_size
+        end_idx = (i + 1) * block_size if i < n_blocks - 1 else len(msd_times)
+        
+        if end_idx - start_idx < 10:  
+            continue
+            
+        try:
+            D, _ = calculate_diffusion_coefficient(
+                msd_times[start_idx:end_idx], 
+                msd_values[start_idx:end_idx],
+                dimension=dimension,
+                **kwargs
+            )
+            D_values.append(D)
+        except Exception as e:
+            print(f"Warning: Failed to fit block {i}: {e}")
+    
+    # Statistics
+    D_values = np.array(D_values)
+    mean_D = np.mean(D_values)
+    std_D = np.std(D_values, ddof=1)  
+    std_error_D = std_D / np.sqrt(len(D_values))  
+    
+    return mean_D, std_error_D
+

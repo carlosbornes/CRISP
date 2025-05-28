@@ -10,8 +10,6 @@ from joblib import Parallel, delayed
 import argparse
 import os
 from typing import Union, List, Optional, Tuple, Any
-from ase.io import read
-import os
 import matplotlib.pyplot as plt
 from ase.data import vdw_radii, atomic_numbers, chemical_symbols
 import seaborn as sns
@@ -21,34 +19,53 @@ import networkx as nx
 import plotly.graph_objects as go
 import plotly.io as pio
 
-# Set default Plotly renderers
 pio.renderers.default = 'svg'
 pio.renderers.default = 'notebook'
 
 
 def indices(atoms, ind: Union[str, List[Union[int, str]]]) -> np.ndarray:
     """
-    Return array of atom indices from an ASE Atoms object based on the input specifier.
-    Inputs:
-      atoms - ASE Atoms object,
-      ind - index specifier ("all", .npy file, integer(s), or chemical symbol(s)).
-    Output: np.ndarray of selected indices.
+    Extract atom indices from an ASE Atoms object based on the input specifier.
+    
+    Parameters
+    ----------
+    atoms : ase.Atoms
+        ASE Atoms object containing atomic structure
+    ind : Union[str, List[Union[int, str]]]
+        Index specifier, can be:
+        - "all" or None: all atoms
+        - string ending with ".npy": load indices from NumPy file
+        - integer or list of integers: direct atom indices
+        - string or list of strings: chemical symbols to select
+        
+    Returns
+    -------
+    np.ndarray
+        Array of selected indices
+        
+    Raises
+    ------
+    ValueError
+        If the index type is invalid
     """
     if ind == "all" or ind is None:
         return np.arange(len(atoms))
+    
     if isinstance(ind, str) and ind.endswith(".npy"):
         return np.load(ind, allow_pickle=True)
+    
     if not isinstance(ind, list):
         ind = [ind]
+    
     if any(isinstance(item, int) for item in ind):
         return np.array(ind)
+    
     if any(isinstance(item, str) for item in ind):
         idx = []
-        if isinstance(ind, str):
-            ind = [ind]
         for symbol in ind:
             idx.append(np.where(np.array(atoms.get_chemical_symbols()) == symbol)[0])
         return np.concatenate(idx)
+    
     raise ValueError("Invalid index type")
 
 
@@ -174,16 +191,14 @@ def process_frame(data, donor_acceptor_indices, frame_index, index_map, N):
     Tuple[np.ndarray, nx.Graph, List]
         Correlation matrix, NetworkX graph, and list of all pairs
     """
-    # Processes data for a specific frame
     frame_data = data[data['Frame'] == frame_index]
     
-    # Check if the DataFrame has distance information
     has_distance = 'Distance' in frame_data.columns
     
     pairs = frame_data[['Donor', 'Acceptor']].values
     distances = frame_data['Distance'].values if has_distance else [1.0] * len(pairs)
     
-    corr_matrix = np.zeros((N, N), dtype=float)  # Changed to float to store distances
+    corr_matrix = np.zeros((N, N), dtype=float)  
 
     for i, (donor, acceptor) in enumerate(pairs):
         if donor in index_map and acceptor in index_map:
@@ -191,12 +206,12 @@ def process_frame(data, donor_acceptor_indices, frame_index, index_map, N):
             acceptor_idx = index_map[acceptor]
             distance = float(distances[i]) if has_distance and distances[i] != "N/A" else 0
             
-            # Store the distance in the correlation matrix
+            # Stores the distance in the correlation matrix
             if corr_matrix[donor_idx, acceptor_idx] == 0:
                 corr_matrix[donor_idx, acceptor_idx] = distance
                 corr_matrix[acceptor_idx, donor_idx] = distance
             else:
-                # If multiple bonds exist, use the average distance
+                # If multiple bonds exist, uses the average distance
                 corr_matrix[donor_idx, acceptor_idx] = (corr_matrix[donor_idx, acceptor_idx] + distance) / 2
                 corr_matrix[acceptor_idx, donor_idx] = (corr_matrix[acceptor_idx, donor_idx] + distance) / 2
 
@@ -205,7 +220,7 @@ def process_frame(data, donor_acceptor_indices, frame_index, index_map, N):
         for j, acceptor_idx in enumerate(range(len(donor_acceptor_indices))):
             if corr_matrix[i, j] > 0:
                 G.add_edge(donor_acceptor_indices[i], donor_acceptor_indices[j],
-                           weight=1,  # Keep a default weight of 1 for edge thickness
+                           weight=1,  # default weight of 1 for edge thickness
                            distance=corr_matrix[i, j])  # Store the actual distance
 
     return corr_matrix, G, pairs
@@ -234,11 +249,10 @@ def visualize_hydrogen_bonds_matrix(corr_matrix, donor_acceptor_indices=None, fr
     """
     plt.figure(figsize=(10, 8))
     
-    # Check if matrix contains integers or floats
     if np.issubdtype(corr_matrix.dtype, np.integer):
         fmt = "d"  # Integer format
     else:
-        fmt = ".2f"  # Float format with 2 decimal places
+        fmt = ".2f"  
     
     sns.heatmap(corr_matrix, annot=True, fmt=fmt, cmap='viridis', 
                 xticklabels=donor_acceptor_indices, yticklabels=donor_acceptor_indices)
@@ -255,7 +269,7 @@ def visualize_hydrogen_bonds_matrix(corr_matrix, donor_acceptor_indices=None, fr
     
     if output_dir:
         plt.savefig(os.path.join(output_dir, filename), bbox_inches='tight')
-        plt.show()  # Added to display the plot before closing
+        plt.show()  
         plt.close()
         print(f"Correlation matrix saved as '{os.path.join(output_dir, filename)}'")
     else:
@@ -283,7 +297,6 @@ def visualize_hydrogen_bonds_plotly(G, donor_acceptor_indices=None, frame_index=
     -------
     None
     """
-    # Visualizes the hydrogen bond network using Plotly
     seed = 42
     pos = nx.spring_layout(G, seed=seed)
     
@@ -291,7 +304,6 @@ def visualize_hydrogen_bonds_plotly(G, donor_acceptor_indices=None, frame_index=
     node_color = [G.degree(node) for node in G.nodes()]
     edge_width = [G[u][v].get('weight', 1) * 0.5 for u, v in G.edges()]
     
-    # Get distances if available
     edge_distances = []
     for u, v in G.edges():
         distance = G[u][v].get('distance', None)
@@ -308,7 +320,6 @@ def visualize_hydrogen_bonds_plotly(G, donor_acceptor_indices=None, frame_index=
         x0, y0 = pos[u]
         x1, y1 = pos[v]
         
-        # Add distance information to each edge
         edge_info = f'Bond {u}-{v}: {edge_distances[i]}'
         
         edge_trace.append(go.Scatter(
@@ -340,11 +351,9 @@ def visualize_hydrogen_bonds_plotly(G, donor_acceptor_indices=None, frame_index=
     
     title = "Average Hydrogen Bond Network Across All Frames" if average else f"Hydrogen Bond Network for Frame {frame_index}"
     
-    # Fixed layout with proper title structure
     fig = go.Figure(
         data=edge_trace + [node_trace],
         layout=go.Layout(
-            # FIX: Changed titlefont_size to proper title dictionary with font property
             title=dict(text=f'<br>{title}', font=dict(size=16)),
             showlegend=False, 
             hovermode='closest',
@@ -362,7 +371,6 @@ def visualize_hydrogen_bonds_plotly(G, donor_acceptor_indices=None, frame_index=
         )
     )
     
-    # Save the figure to an HTML file
     if output_dir:
         filename = "hbond_network_average.html" if average else f"hbond_network_frame_{frame_index}.html"
         fig.write_html(os.path.join(output_dir, filename))
@@ -397,7 +405,6 @@ def visualize_hydrogen_bonds_matrix_plotly(corr_matrix, donor_acceptor_indices=N
                  if isinstance(val, float) else f"Donor: {donor_acceptor_indices[i]}<br>Acceptor: {donor_acceptor_indices[j]}<br>Value: {val}"
                  for j, val in enumerate(row)] for i, row in enumerate(corr_matrix)]
     
-    # Create the figure
     fig = go.Figure(data=go.Heatmap(
         z=corr_matrix,
         x=[str(idx) for idx in donor_acceptor_indices],
@@ -408,10 +415,8 @@ def visualize_hydrogen_bonds_matrix_plotly(corr_matrix, donor_acceptor_indices=N
         colorbar=dict(title='No. of H-Bond')
     ))
     
-    # Set title based on whether it's average or frame-specific
     title = "Average Hydrogen Bond Correlation Matrix Across All Frames" if average else f"Hydrogen Bond Correlation Matrix for Frame {frame_index}"
     
-    # Update layout for better appearance and interactivity
     fig.update_layout(
         title=dict(text=title, font=dict(size=16)),
         xaxis=dict(title='Atom Index', tickfont=dict(size=10)),
@@ -421,7 +426,6 @@ def visualize_hydrogen_bonds_matrix_plotly(corr_matrix, donor_acceptor_indices=N
         autosize=True
     )
     
-    # Save the figure to an HTML file
     if output_dir:
         filename = "hbond_correlation_matrix_average.html" if average else f"hbond_correlation_matrix_frame_{frame_index}.html"
         fig.write_html(os.path.join(output_dir, filename))
@@ -430,7 +434,7 @@ def visualize_hydrogen_bonds_matrix_plotly(corr_matrix, donor_acceptor_indices=N
         fig.show()
 
 
-def visualize_hydrogen_bonds(csv_file, indices_array_path, frame_index=None, average=False, output_dir=None):
+def visualize_hydrogen_bonds(csv_file, indices_path, frame_index=None, average=False, output_dir=None):
     """
     Visualizes hydrogen bonds from a CSV file containing donor-acceptor pairs.
     
@@ -438,7 +442,7 @@ def visualize_hydrogen_bonds(csv_file, indices_array_path, frame_index=None, ave
     ----------
     csv_file : str
         Path to CSV file with hydrogen bond data
-    indices_array_path : str
+    indices_path : str
         Path to NumPy array file with donor/acceptor indices
     frame_index : int, optional
         Frame index to visualize (required if average=False)
@@ -451,15 +455,13 @@ def visualize_hydrogen_bonds(csv_file, indices_array_path, frame_index=None, ave
     -------
     None
     """
-    # Visualizes hydrogen bonds from a CSV file containing donor-acceptor pairs
     data = pd.read_csv(csv_file)
-    donor_acceptor_indices = np.load(indices_array_path)    
+    donor_acceptor_indices = np.load(indices_path)    
     index_map = {idx: i for i, idx in enumerate(donor_acceptor_indices)}
     N = len(donor_acceptor_indices)
     
     if average:
         corr_matrix, G, pairs = aggregate_data(data, index_map, N)
-        # Replace the old function with the new Plotly version
         visualize_hydrogen_bonds_matrix_plotly(corr_matrix, donor_acceptor_indices=donor_acceptor_indices, average=True, output_dir=output_dir)
         visualize_hydrogen_bonds_plotly(G, average=True, output_dir=output_dir)
     else:
@@ -467,22 +469,23 @@ def visualize_hydrogen_bonds(csv_file, indices_array_path, frame_index=None, ave
             raise ValueError("frame_index must be provided when average=False")
         
         corr_matrix, G, pairs = process_frame(data, donor_acceptor_indices, frame_index, index_map, N)
-        # Replace the old function with the new Plotly version
         visualize_hydrogen_bonds_matrix_plotly(corr_matrix, donor_acceptor_indices=donor_acceptor_indices, frame_index=frame_index, output_dir=output_dir)
         visualize_hydrogen_bonds_plotly(G, frame_index=frame_index, output_dir=output_dir)
 
 
-def hydrogen_bonds(filename, skip_frames=10, acceptor_atoms=["N","O","F"], angle_cutoff=120, h_bond_cutoff=2.4, bond_cutoff=1.6, 
-                   mic=True, single_h_bond=False, output_dir="./", time_step=None, plot_count=False, plot_heatmap=False, 
-                   plot_graph_frame=True, plot_graph_average=False, indices_array_path=None, graph_frame_index=0):
+def hydrogen_bonds(traj_path, frame_skip=10, acceptor_atoms=["N","O","F"], angle_cutoff=120, 
+                  h_bond_cutoff=2.4, bond_cutoff=1.6, mic=True, single_h_bond=False, 
+                  output_dir="./", time_step=None, plot_count=False, plot_heatmap=False, 
+                  plot_graph_frame=True, plot_graph_average=False, indices_path=None, 
+                  graph_frame_index=0):
     """
     Analyze hydrogen bonds in a molecular dynamics trajectory.
     
     Parameters
     ----------
-    filename : str
+    traj_path : str
         Path to trajectory file
-    skip_frames : int, optional
+    frame_skip : int, optional
         Number of frames to skip (default: 10)
     acceptor_atoms : List[str], optional
         List of element symbols that can be acceptors (default: ["N","O","F"])
@@ -508,7 +511,7 @@ def hydrogen_bonds(filename, skip_frames=10, acceptor_atoms=["N","O","F"], angle
         Whether to plot interactive hydrogen bond network graph for specific frame (default: True)
     plot_graph_average : bool, optional
         Whether to plot interactive average hydrogen bond network graph (default: False)
-    indices_array_path : str, optional
+    indices_path : str, optional
         Path to NumPy array with donor/acceptor atom indices for graph plotting.
         If None, the unique indices will be automatically extracted and saved (default: None)
     graph_frame_index : int, optional
@@ -521,10 +524,10 @@ def hydrogen_bonds(filename, skip_frames=10, acceptor_atoms=["N","O","F"], angle
     """
     os.makedirs(output_dir, exist_ok=True)
     
-    output_filename = os.path.join(output_dir, f'hydrogen_bonds_{skip_frames}skips.csv')
-    total_bonds_filename = os.path.join(output_dir, f'total_hydrogen_bonds_per_frame_{skip_frames}skips.csv')
+    output_filename = os.path.join(output_dir, f'hydrogen_bonds_{frame_skip}skips.csv')
+    total_bonds_filename = os.path.join(output_dir, f'total_hydrogen_bonds_per_frame_{frame_skip}skips.csv')
     
-    trajectory = read(filename,index=f"::{skip_frames}")
+    trajectory = read(traj_path, index=f"::{frame_skip}")
     
     all_data = Parallel(n_jobs=-1)(
         delayed(count_hydrogen_bonds)(
@@ -535,16 +538,14 @@ def hydrogen_bonds(filename, skip_frames=10, acceptor_atoms=["N","O","F"], angle
 
     h_bonds_per_frame = [num_bonds for _, num_bonds in all_data]
     frame_dict_list = [frame_dict for frame_dict, _ in all_data]
-    data_dict = {i*skip_frames: d for i, d in enumerate(frame_dict_list)}
+    data_dict = {i*frame_skip: d for i, d in enumerate(frame_dict_list)}
     
-    # Calculate donor-acceptor distances for each frame
+    # Donor-acceptor distances for each frame
     donor_acceptor_distances = {}
     for frame_idx, frame in enumerate(list(data_dict.keys())):
         frame_atoms = trajectory[frame_idx]
-        # Get distances matrix for this frame
         dm = frame_atoms.get_all_distances(mic=mic)
         
-        # Store distances for this frame
         donor_acceptor_distances[frame] = {}
         
         for hydrogen in data_dict[frame]:
@@ -602,20 +603,17 @@ def hydrogen_bonds(filename, skip_frames=10, acceptor_atoms=["N","O","F"], angle
         writer = csv.writer(f)
         writer.writerow(['Frame', 'Total Hydrogen Bonds'])
         for frame_idx, num_bonds in enumerate(h_bonds_per_frame):
-            writer.writerow([frame_idx * skip_frames, num_bonds])
+            writer.writerow([frame_idx * frame_skip, num_bonds])
 
     if time_step is not None and plot_count:
-        plot_hydrogen_count(h_bonds_per_frame, skip_frames, time_step, output_dir)
+        plot_hydrogen_count(h_bonds_per_frame, frame_skip, time_step, output_dir)
 
     if plot_heatmap:
         plot_2Dheatmap(data_dict, output_dir)
         
-    # Check if either graph plotting option is enabled
     if plot_graph_frame or plot_graph_average:
-        # Create a CSV file with donor-acceptor pairs for visualization
         network_csv = os.path.join(output_dir, "hydrogen_bonds_network.csv")
         
-        # Collect all unique donor and acceptor atoms
         unique_atoms = set()
         
         with open(network_csv, 'w', newline='') as csvfile:
@@ -625,41 +623,56 @@ def hydrogen_bonds(filename, skip_frames=10, acceptor_atoms=["N","O","F"], angle
                 for hydrogen in data_dict[frame]:
                     if len(data_dict[frame][hydrogen]) > 1:
                         donor = data_dict[frame][hydrogen][0][0]
-                        unique_atoms.add(donor)  # Add donor to unique atoms
+                        unique_atoms.add(donor)  # Added donor to unique atoms
                         
                         for i, sublist in enumerate(data_dict[frame][hydrogen][1:]):
                             acceptor = sublist[0]
-                            unique_atoms.add(acceptor)  # Add acceptor to unique atoms
+                            unique_atoms.add(acceptor)  # Added acceptor to unique atoms
                             
                             # Include the donor-acceptor distance in the network file
                             distance = donor_acceptor_distances[frame][hydrogen].get(acceptor, "N/A")
                             writer.writerow([frame, donor, acceptor, distance])
         
-        # Generate indices array if not provided
-        if indices_array_path is None:
-            indices_array_path = os.path.join(output_dir, "donor_acceptor_indices.npy")
+        if indices_path is None:
+            indices_path = os.path.join(output_dir, "donor_acceptor_indices.npy")
             unique_atoms_array = np.array(sorted(list(unique_atoms)), dtype=int)
-            np.save(indices_array_path, unique_atoms_array)
-            print(f"Generated and saved {len(unique_atoms_array)} unique donor/acceptor atom indices to {indices_array_path}")
+            np.save(indices_path, unique_atoms_array)
+            print(f"Generated and saved {len(unique_atoms_array)} unique donor/acceptor atom indices to {indices_path}")
         
-        # Create frame-specific visualization if requested
         if plot_graph_frame:
             print(f"Generating hydrogen bond network visualizations for frame {graph_frame_index}...")
-            visualize_hydrogen_bonds(network_csv, indices_array_path, 
+            visualize_hydrogen_bonds(network_csv, indices_path, 
                                      frame_index=graph_frame_index, average=False, 
                                      output_dir=output_dir)
         
-        # Create average visualization if requested
         if plot_graph_average:
             print("Generating average hydrogen bond network visualization...")
-            visualize_hydrogen_bonds(network_csv, indices_array_path, 
+            visualize_hydrogen_bonds(network_csv, indices_path, 
                                      average=True, output_dir=output_dir)
     
     return h_bonds_per_frame
 
 
-def plot_hydrogen_count(h_bonds_per_frame, skip_frames, time_step, output_dir):
-    x = np.arange(len(h_bonds_per_frame)) * time_step * skip_frames / 1000
+def plot_hydrogen_count(h_bonds_per_frame, frame_skip, time_step, output_dir):
+    """
+    Plot hydrogen bond count over time.
+    
+    Parameters
+    ----------
+    h_bonds_per_frame : List[int]
+        Number of hydrogen bonds per frame
+    frame_skip : int
+        Number of frames skipped in trajectory analysis
+    time_step : float
+        Time step between frames in fs
+    output_dir : str
+        Directory to save output file
+        
+    Returns
+    -------
+    None
+    """
+    x = np.arange(len(h_bonds_per_frame)) * time_step * frame_skip / 1000
 
     fig, ax1 = plt.subplots(figsize=(8, 6))
     ax1.plot(x, h_bonds_per_frame, '-', color="blue", label="H-bond count")
@@ -670,7 +683,7 @@ def plot_hydrogen_count(h_bonds_per_frame, skip_frames, time_step, output_dir):
     fig.legend(loc="center right", bbox_to_anchor=(1.1, 0.5))
     filename = os.path.join(output_dir, "h_bond_count.png")
     plt.savefig(filename, bbox_inches="tight")
-    plt.show()  # Added to display the plot
+    plt.show()
     plt.close()
     print(f"Hydrogen bond count plot saved to '{filename}'")
 
@@ -698,7 +711,7 @@ def plot_2Dheatmap(data_dict, output_dir):
 
     filename = os.path.join(output_dir, "h_bond_structure.png")
     plt.savefig(filename, bbox_inches="tight")
-    plt.show()  # Added to display the plot
+    plt.show() 
     plt.close()
     print(f"H-bond structure 2D histogram saved to '{filename}'")
 

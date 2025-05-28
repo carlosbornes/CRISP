@@ -7,44 +7,43 @@ simulations using interactive 3D plots.
 
 import os
 import numpy as np
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 from ase.io import read
 import plotly.graph_objects as go
 import plotly.io as pio
 pio.renderers.default = "notebook"
 
-# Dictionary of covalent radii for all elements in Ångström
-# Used to scale atom sizes appropriately in the visualization
-COVALENT_RADII = {
+# Dictionary of van der Waals radii for all elements in Ångström
+VDW_RADII = {
     # Period 1
-    'H': 0.31, 'He': 0.28, 
+    'H': 1.20, 'He': 1.40, 
     # Period 2
-    'Li': 1.28, 'Be': 0.96, 'B': 0.84, 'C': 0.76, 'N': 0.71, 'O': 0.66, 'F': 0.57, 'Ne': 0.58,
-    # Period 3 
-    'Na': 1.66, 'Mg': 1.41, 'Al': 1.21, 'Si': 1.11, 'P': 1.07, 'S': 1.05, 'Cl': 1.02, 'Ar': 1.06,
+    'Li': 1.82, 'Be': 1.53, 'B': 1.92, 'C': 1.70, 'N': 1.55, 'O': 1.52, 'F': 1.47, 'Ne': 1.54,
+    # Period 3
+    'Na': 2.27, 'Mg': 1.73, 'Al': 1.84, 'Si': 2.10, 'P': 1.80, 'S': 1.80, 'Cl': 1.75, 'Ar': 1.88,
     # Period 4
-    'K': 2.03, 'Ca': 1.76, 'Sc': 1.70, 'Ti': 1.60, 'V': 1.53, 'Cr': 1.39, 'Mn': 1.39, 
-    'Fe': 1.32, 'Co': 1.26, 'Ni': 1.24, 'Cu': 1.32, 'Zn': 1.22, 'Ga': 1.22, 'Ge': 1.20, 
-    'As': 1.19, 'Se': 1.20, 'Br': 1.20, 'Kr': 1.16,
+    'K': 2.75, 'Ca': 2.31, 'Sc': 2.30, 'Ti': 2.15, 'V': 2.05, 'Cr': 2.05, 'Mn': 2.05,
+    'Fe': 2.05, 'Co': 2.00, 'Ni': 2.00, 'Cu': 2.00, 'Zn': 2.10, 'Ga': 1.87, 'Ge': 2.11,
+    'As': 1.85, 'Se': 1.90, 'Br': 1.85, 'Kr': 2.02,
     # Period 5
-    'Rb': 2.20, 'Sr': 1.95, 'Y': 1.90, 'Zr': 1.75, 'Nb': 1.64, 'Mo': 1.54, 'Tc': 1.47, 
-    'Ru': 1.46, 'Rh': 1.42, 'Pd': 1.39, 'Ag': 1.45, 'Cd': 1.44, 'In': 1.42, 'Sn': 1.39, 
-    'Sb': 1.39, 'Te': 1.38, 'I': 1.39, 'Xe': 1.40,
+    'Rb': 3.03, 'Sr': 2.49, 'Y': 2.40, 'Zr': 2.30, 'Nb': 2.15, 'Mo': 2.10, 'Tc': 2.05,
+    'Ru': 2.05, 'Rh': 2.00, 'Pd': 2.05, 'Ag': 2.10, 'Cd': 2.20, 'In': 2.20, 'Sn': 2.17,
+    'Sb': 2.06, 'Te': 2.06, 'I': 1.98, 'Xe': 2.16,
     # Period 6
-    'Cs': 2.44, 'Ba': 2.15, 'La': 2.07, 'Ce': 2.04, 'Pr': 2.03, 'Nd': 2.01, 'Pm': 1.99, 
-    'Sm': 1.98, 'Eu': 1.98, 'Gd': 1.96, 'Tb': 1.94, 'Dy': 1.92, 'Ho': 1.92, 'Er': 1.89, 
-    'Tm': 1.90, 'Yb': 1.87, 'Lu': 1.87, 'Hf': 1.75, 'Ta': 1.70, 'W': 1.62, 'Re': 1.51, 
-    'Os': 1.44, 'Ir': 1.41, 'Pt': 1.36, 'Au': 1.36, 'Hg': 1.32, 'Tl': 1.45, 'Pb': 1.46, 
-    'Bi': 1.48, 'Po': 1.40, 'At': 1.50, 'Rn': 1.50,
+    'Cs': 3.43, 'Ba': 2.68, 'La': 2.50, 'Ce': 2.48, 'Pr': 2.47, 'Nd': 2.45, 'Pm': 2.43,
+    'Sm': 2.42, 'Eu': 2.40, 'Gd': 2.38, 'Tb': 2.37, 'Dy': 2.35, 'Ho': 2.33, 'Er': 2.32,
+    'Tm': 2.30, 'Yb': 2.28, 'Lu': 2.27, 'Hf': 2.25, 'Ta': 2.20, 'W': 2.10, 'Re': 2.05,
+    'Os': 2.00, 'Ir': 2.00, 'Pt': 2.05, 'Au': 2.10, 'Hg': 2.05, 'Tl': 2.20, 'Pb': 2.30,
+    'Bi': 2.30, 'Po': 2.00, 'At': 2.00, 'Rn': 2.00,
     # Period 7
-    'Fr': 2.60, 'Ra': 2.21, 'Ac': 2.15, 'Th': 2.06, 'Pa': 2.00, 'U': 1.96, 'Np': 1.90, 
-    'Pu': 1.87, 'Am': 1.80, 'Cm': 1.69, 'Bk': 1.68, 'Cf': 1.68, 'Es': 1.65, 'Fm': 1.67, 
-    'Md': 1.73, 'No': 1.76, 'Lr': 1.61, 'Rf': 1.57, 'Db': 1.49, 'Sg': 1.43, 'Bh': 1.41, 
-    'Hs': 1.34, 'Mt': 1.29, 'Ds': 1.28, 'Rg': 1.21, 'Cn': 1.22, 'Nh': 1.36, 'Fl': 1.43, 
-    'Mc': 1.62, 'Lv': 1.75, 'Ts': 1.65, 'Og': 1.57
+    'Fr': 3.50, 'Ra': 2.80, 'Ac': 2.60, 'Th': 2.40, 'Pa': 2.30, 'U': 2.30, 'Np': 2.30,
+    'Pu': 2.30, 'Am': 2.30, 'Cm': 2.30, 'Bk': 2.30, 'Cf': 2.30, 'Es': 2.30, 'Fm': 2.30,
+    'Md': 2.30, 'No': 2.30, 'Lr': 2.30, 'Rf': 2.30, 'Db': 2.30, 'Sg': 2.30, 'Bh': 2.30,
+    'Hs': 2.30, 'Mt': 2.30, 'Ds': 2.30, 'Rg': 2.30, 'Cn': 2.30, 'Nh': 2.30, 'Fl': 2.30,
+    'Mc': 2.30, 'Lv': 2.30, 'Ts': 2.30, 'Og': 2.30
 }
 
-# Default color palette for atom types
+
 ELEMENT_COLORS = {
     # Common elements
     'H': 'white', 'C': 'black', 'N': 'blue', 'O': 'red', 'F': 'green',
@@ -62,13 +61,14 @@ ELEMENT_COLORS = {
 
 def plot_atomic_trajectory(
     traj_path: str,
-    selected_indices: List[int],
-    output_path: str,
+    indices_path: Union[str, List[int]],
+    output_dir: str,
+    output_filename: str = "trajectory_plot.html",
     frame_skip: int = 100,
     plot_title: str = None,
     show_plot: bool = False,
     atom_size_scale: float = 1.0,
-    plot_lines: bool = False  # New parameter: default to scatter-only mode
+    plot_lines: bool = False  
 ):
     """
     Create a 3D visualization of atom trajectories with all atom types displayed.
@@ -76,28 +76,39 @@ def plot_atomic_trajectory(
     Parameters
     ----------
     traj_path : str
-        Path to the ASE trajectory file
-    selected_indices : List[int]
-        Atom indices to plot trajectories for
-    output_path : str
-        Path to save the generated HTML visualization
+        Path to the ASE trajectory file (supports any ASE-readable format like XYZ)
+    indices_path : str or List[int]
+        Either a path to numpy file containing atom indices to plot trajectories for,
+        or a direct list of atom indices
+    output_dir : str
+        Directory where the output visualization will be saved
+    output_filename : str, optional
+        Filename for the output visualization (default: "trajectory_plot.html")
     frame_skip : int, optional
         Use every nth frame from the trajectory (default: 100)
     plot_title : str, optional
-        Custom title for the plot (default: auto-generated)
+        Custom title for the plot (default: auto-generated based on atom types)
     show_plot : bool, optional
-        Whether to display the plot (default: False)
+        Whether to display the plot interactively (default: False)
     atom_size_scale : float, optional
-        Scale factor for atom sizes (default: 1.0)
+        Scale factor for atom sizes in the visualization (default: 1.0)
     plot_lines : bool, optional
         Whether to connect trajectory points with lines (default: False)
         
     Returns
     -------
     plotly.graph_objects.Figure
-        The generated plotly figure object
+        The generated plotly figure object that can be further customized
+        
+    Notes
+    -----
+    This function creates an interactive 3D visualization showing:
+    1. All atoms from the first frame, colored by element
+    2. Trajectory paths for selected atoms throughout all frames
+    3. Annotations for the start and end positions of traced atoms
+    
+    The output is saved as an HTML file which can be opened in any web browser.
     """
-    # Load trajectory
     print(f"Loading trajectory from {traj_path} (using every {frame_skip}th frame)...")
     traj = read(traj_path, index=f'::{frame_skip}')
     
@@ -107,16 +118,16 @@ def plot_atomic_trajectory(
     
     print(f"Loaded {len(traj)} frames from trajectory")
     
-    if not selected_indices:
-        print("No atom indices selected for trajectory plotting")
+    if isinstance(indices_path, str):
+        selected_indices = np.load(indices_path)
+        print(f"Loaded {len(selected_indices)} atoms for trajectory plotting from {indices_path}")
     else:
-        print(f"Selected {len(selected_indices)} atoms for trajectory plotting: {selected_indices}")
+        selected_indices = np.array(indices_path)
+        print(f"Using {len(selected_indices)} directly provided atom indices for trajectory plotting")
     
-    # Get box dimensions
     box = traj[0].cell.lengths()
     print(f"Simulation box dimensions: {box} Å")
     
-    # Find all unique atom types in the first frame
     atom_types = {}
     max_index = max([atom.index for atom in traj[0]])
     print(f"Analyzing atom types in first frame (total atoms: {len(traj[0])}, max index: {max_index})...")
@@ -129,17 +140,13 @@ def plot_atomic_trajectory(
     
     print(f"Found {len(atom_types)} atom types: {', '.join(atom_types.keys())}")
     
-    # Create figure
     fig = go.Figure()
     
-    # Determine colors for selected indices
-    # Use same color if more than 5 indices
     use_same_color = len(selected_indices) > 5
     colors = ['blue'] * len(selected_indices) if use_same_color else [
         'blue', 'green', 'red', 'orange', 'purple'
     ][:len(selected_indices)]
     
-    # Add atoms of each type from the first frame
     for symbol, indices in atom_types.items():
         positions = np.array([traj[0].positions[i] for i in indices])
         
@@ -147,8 +154,7 @@ def plot_atomic_trajectory(
         if len(positions) == 0:
             continue
         
-        # Determine marker size based on covalent radius
-        size = COVALENT_RADII.get(symbol, 1.0) * 3.0 * atom_size_scale
+        size = VDW_RADII.get(symbol, 1.0) * 3.0 * atom_size_scale
         color = ELEMENT_COLORS.get(symbol, 'gray')
         
         fig.add_trace(go.Scatter3d(
@@ -166,7 +172,6 @@ def plot_atomic_trajectory(
             )
         ))
     
-    # Collect trajectories for selected atoms
     selected_positions = {idx: [] for idx in selected_indices}
     for atoms in traj:
         for idx in selected_indices:
@@ -175,16 +180,15 @@ def plot_atomic_trajectory(
             else:
                 print(f"Warning: Index {idx} is out of range")
     
-    # Add trajectories for selected atoms
     annotations = []
     for i, idx in enumerate(selected_indices):
-        if not selected_positions[idx]:  # Skip if no positions collected
+        if not selected_positions[idx]:  
             continue
             
         pos = np.array(selected_positions[idx])
         color = colors[i % len(colors)]
         
-        # Add annotations for first and last frames (now outside of if/else)
+        # Add annotations for first and last frames 
         first_frame_pos = pos[0]
         last_frame_pos = pos[-1]
         
@@ -227,7 +231,7 @@ def plot_atomic_trajectory(
                 marker=dict(size=4, color=color),
             ))
         else:
-            # Scatter-only mode: just show points for each frame
+            # Scatter-only mode: just showing points for each frame
             fig.add_trace(go.Scatter3d(
                 x=pos[:, 0],
                 y=pos[:, 1],
@@ -243,12 +247,10 @@ def plot_atomic_trajectory(
                 )
             ))
     
-    # Set plot title
     if not plot_title:
         atom_types_str = ', '.join(atom_types.keys())
         plot_title = f'Atomic Trajectories in {atom_types_str} System'
     
-    # Update layout
     fig.update_layout(
         title=plot_title,
         scene=dict(
@@ -261,21 +263,15 @@ def plot_atomic_trajectory(
             aspectmode='cube'
         ),
         margin=dict(l=0, r=0, b=0, t=40),
-        scene_annotations=annotations  # Always include annotations
+        scene_annotations=annotations  
     )
     
-    # Create output directory if needed
-    os.makedirs(os.path.dirname(output_path) or '.', exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, output_filename)
     
-    # Ensure output path ends with .html
-    if not output_path.endswith('.html'):
-        output_path += '.html'
-    
-    # Save figure
     fig.write_html(output_path)
     print(f"Plot has been saved to {output_path}")
     
-    # Show figure if requested
     if show_plot:
         fig.show()
     

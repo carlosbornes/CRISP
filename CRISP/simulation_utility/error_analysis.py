@@ -242,8 +242,8 @@ def error_analysis(data, max_lag=None, threshold=0.05, convergence_tol=0.001, pl
     
     # Combine results
     results = {
-        "mean": acf_results["mean"],  # Should be the same in both methods
-        "std": acf_results["std"],    # Should be the same in both methods
+        "mean": acf_results["mean"],  
+        "std": acf_results["std"],    
         "acf_results": acf_results,
         "block_results": block_results
     }

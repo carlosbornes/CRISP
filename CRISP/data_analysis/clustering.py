@@ -14,15 +14,16 @@ import pickle
 import csv
 import matplotlib.pyplot as plt
 import os
+from typing import Union, List
 
 
-class StructureAnalyzer:
+class analyze_frame:
     """
     Analyze atomic structures using DBSCAN clustering algorithm.
     
     Parameters
     ----------
-    traj_file : str
+    traj_path : str
         Path to trajectory file
     atom_indices : np.ndarray
         Array containing indices of atoms to analyze
@@ -35,8 +36,10 @@ class StructureAnalyzer:
     custom_frame_index : int, optional
         Specific frame to analyze (default: None, uses last frame)
     """
-    def __init__(self, traj_file, atom_indices, threshold, min_samples, metric='precomputed', custom_frame_index=None):
-        self.traj_file = traj_file
+    def __init__(self, traj_path, atom_indices, threshold, min_samples, metric='precomputed', custom_frame_index=None):
+        self.traj_path = traj_path
+        if isinstance(atom_indices, str):
+            atom_indices = np.load(atom_indices)
         self.atom_indices = atom_indices
         self.threshold = threshold
         self.min_samples = min_samples
@@ -56,9 +59,9 @@ class StructureAnalyzer:
         """
         try:
             if self.custom_frame_index is not None:
-                frame = read(self.traj_file, index=self.custom_frame_index)
+                frame = read(self.traj_path, index=self.custom_frame_index)
             else:
-                frame = read(self.traj_file, index='-1')
+                frame = read(self.traj_path, index='-1')
             return frame
         except Exception as e:
             print(f"Error reading trajectory: {e}")
@@ -140,38 +143,34 @@ class StructureAnalyzer:
         dict or None
             Dictionary with analysis results or None if analysis fails
         """
-        # Read the structure
         frame = self.read_custom_frame()
         if frame is None:
             return None
         
-        # Set up output directory
         if output_dir is None and save_html_path is not None:
             output_dir = os.path.dirname(save_html_path)
         if not output_dir:
             output_dir = "clustering_results"
         
-        # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
         print(f"\nSaving results to directory: {output_dir}")
         
-        # Generate HTML save path if not provided
         if save_html_path is None:
-            base_name = os.path.splitext(os.path.basename(self.traj_file))[0]
+            base_name = os.path.splitext(os.path.basename(self.traj_path))[0]
             save_html_path = os.path.join(output_dir, f"{base_name}_clusters.html")
             
         distance_matrix, positions = self.calculate_distance_matrix(frame)
         self.find_clusters()
         
-        # Calculate silhouette score (excluding outliers)
+        # Silhouette score (excluding outliers)
         silhouette_avg = calculate_silhouette_score(self.distance_matrix, self.labels)
 
-        # Create interactive 3D visualization
         create_html_visualization(
             positions=positions, 
             labels=self.labels,
             title='Interactive 3D Cluster Visualization', 
-            save_path=save_html_path
+            save_path=save_html_path,
+            cell_dimensions=frame.cell.lengths()  
         )
 
         # Extract cluster information
@@ -181,10 +180,8 @@ class StructureAnalyzer:
         avg_cluster_size = cluster_info["avg_cluster_size"]
         cluster_to_original = cluster_info["cluster_to_original"]
 
-        # Print summary
         print_cluster_summary(num_clusters, outlier_count, silhouette_avg, avg_cluster_size, cluster_to_original)
         
-        # Save detailed frame information to text file
         frame_info_path = os.path.join(output_dir, "frame_data.txt")
         save_frame_info_to_file(
             frame_info_path, 
@@ -199,7 +196,6 @@ class StructureAnalyzer:
             self.atom_indices
         )
         
-        # Save analysis results as pickle file
         pickle_path = os.path.join(output_dir, "single_frame_analysis.pkl")
         result_data = {
             "num_clusters": num_clusters,
@@ -212,7 +208,7 @@ class StructureAnalyzer:
             "parameters": {
                 "threshold": self.threshold,
                 "min_samples": self.min_samples,
-                "trajectory": self.traj_file,
+                "trajectory": self.traj_path,
                 "frame_index": self.custom_frame_index
             }
         }
@@ -224,7 +220,7 @@ class StructureAnalyzer:
         return result_data
 
 
-def create_html_visualization(positions, labels, title, save_path):
+def create_html_visualization(positions, labels, title, save_path, cell_dimensions=None):
     """
     Create and save a 3D HTML visualization of clusters.
     
@@ -238,14 +234,11 @@ def create_html_visualization(positions, labels, title, save_path):
         Title for the visualization
     save_path : str
         Path to save the HTML file
-        
-    Returns
-    -------
-    None
+    cell_dimensions : np.ndarray, optional
+        Cell dimensions from the simulation [a, b, c]
     """
     fig = go.Figure()
     
-    # Add traces for each cluster
     for label in np.unique(labels):
         cluster_points = positions[labels == label]
         label_name = "Outliers" if label == -1 else f'Cluster {label}'
@@ -266,18 +259,57 @@ def create_html_visualization(positions, labels, title, save_path):
             )
         )
     
-    # Update layout
-    fig.update_layout(
-        title=title,
-        scene=dict(
-            xaxis=dict(title='X'),
-            yaxis=dict(title='Y'),
-            zaxis=dict(title='Z')
-        ),
-        legend=dict(itemsizing='constant')
-    )
+    layout_args = {
+        "title": title,
+        "legend": dict(itemsizing='constant')
+    }
     
-    # Save HTML file
+    scene_dict = {
+        "xaxis": dict(title='X'),
+        "yaxis": dict(title='Y'),
+        "zaxis": dict(title='Z')
+    }
+    
+    if cell_dimensions is not None:
+        scene_dict["xaxis"]["range"] = [0, cell_dimensions[0]]
+        scene_dict["yaxis"]["range"] = [0, cell_dimensions[1]]
+        scene_dict["zaxis"]["range"] = [0, cell_dimensions[2]]
+        
+        vertices = [
+            [0, 0, 0], [cell_dimensions[0], 0, 0],
+            [cell_dimensions[0], cell_dimensions[1], 0], [0, cell_dimensions[1], 0],
+            [0, 0, cell_dimensions[2]], [cell_dimensions[0], 0, cell_dimensions[2]],
+            [cell_dimensions[0], cell_dimensions[1], cell_dimensions[2]], [0, cell_dimensions[1], cell_dimensions[2]]
+        ]
+        
+        # Define box edges
+        i, j, k = [], [], []
+        # Bottom face
+        i.extend([0, 1, 2, 3, 0])
+        j.extend([1, 2, 3, 0, 4])
+        k.extend([0, 0, 0, 0, 0])
+        # Top face
+        i.extend([4, 5, 6, 7, 4])
+        j.extend([5, 6, 7, 4, 0])
+        k.extend([0, 0, 0, 0, 0])
+        # Vertical edges
+        i.extend([1, 2, 3])
+        j.extend([5, 6, 7])
+        k.extend([0, 0, 0])
+        
+        fig.add_trace(go.Scatter3d(
+            x=[vertices[idx][0] for idx in i],
+            y=[vertices[idx][1] for idx in j],
+            z=[vertices[idx][2] for idx in k],
+            mode='lines',
+            line=dict(color='black', width=2),
+            name='Unit Cell',
+            showlegend=False
+        ))
+    
+    layout_args["scene"] = scene_dict
+    fig.update_layout(**layout_args)
+    
     fig.write_html(save_path)
     print(f"3D visualization saved to {save_path}")
 
@@ -440,22 +472,23 @@ def save_frame_info_to_file(file_path, threshold, min_samples, num_clusters, out
     print(f"Detailed frame data saved to: {file_path}")
 
 
-def analyze_trajectory(trajectory_path, atom_indices_path, threshold, min_samples, skip_frames=10,
-                      output_dir="clustering_results", save_html_visualizations=True):
+def analyze_trajectory(traj_path, indices_path, threshold, min_samples, frame_skip=10,
+                     output_dir="clustering_results", save_html_visualizations=True):
     """
     Analyze an entire trajectory with DBSCAN clustering.
     
     Parameters
     ----------
-    trajectory_path : str
-        Path to trajectory file
-    atom_indices_path : str
-        Path to numpy array file containing atom indices
+    traj_path : str
+        Path to trajectory file (supports any ASE-readable format like XYZ)
+    indices_path : Union[str, List[int], np.ndarray]
+        Either a path to numpy file containing atom indices to analyze,
+        or a direct list/array of atom indices
     threshold : float
         DBSCAN eps parameter (distance threshold)
     min_samples : int
         DBSCAN min_samples parameter
-    skip_frames : int, optional
+    frame_skip : int, optional
         Number of frames to skip (default: 10)
     output_dir : str, optional
         Directory to save output files (default: "clustering_results")
@@ -467,66 +500,56 @@ def analyze_trajectory(trajectory_path, atom_indices_path, threshold, min_sample
     list
         List of analysis results for each frame
     """
-    atom_indices = np.load(atom_indices_path)
+    if isinstance(indices_path, str):
+        atom_indices = np.load(indices_path)
+        print(f"Loaded {len(atom_indices)} atoms for clustering from {indices_path}")
+    else:
+        atom_indices = np.array(indices_path)
+        print(f"Using {len(atom_indices)} directly provided atom indices for clustering")
+    
     os.makedirs(output_dir, exist_ok=True)
     
     try:
-        trajectory = read(trajectory_path, index=f'::{skip_frames}')
+        print(f"Loading trajectory from {traj_path} (using every {frame_skip}th frame)...")
+        trajectory = read(traj_path, index=f'::{frame_skip}')
         if not isinstance(trajectory, list):
             trajectory = [trajectory]
+        print(f"Loaded {len(trajectory)} frames from trajectory")
     except Exception as e:
         print(f"Error reading trajectory: {e}")
         return []
     
-    num_frames = len(trajectory)
     results = []
     
-    # Track the first and last frame data for visualization
-    first_frame_data = None
-    last_frame_data = None
+    print(f"Analyzing {len(trajectory)} frames...")
     
-    # Get base trajectory name for HTML filenames
-    base_traj_name = os.path.splitext(os.path.basename(trajectory_path))[0]
-
-    # Create a file to save per-frame information
-    frame_data_file = os.path.join(output_dir, f"{base_traj_name}_frame_data.txt")
-    with open(frame_data_file, 'w') as f_frames:
-        f_frames.write(f"DBSCAN Clustering Analysis - Per-Frame Results\n")
-        f_frames.write(f"==========================================\n\n")
-        f_frames.write(f"Parameters:\n")
-        f_frames.write(f"  Trajectory: {trajectory_path}\n")
-        f_frames.write(f"  Threshold (eps): {threshold}\n")
-        f_frames.write(f"  Min Samples: {min_samples}\n")
-        f_frames.write(f"  Frame Skip: {skip_frames}\n\n")
-
-        for frame_index, structure in enumerate(trajectory):
-            frame_number = frame_index * skip_frames
+    for i, frame in enumerate(trajectory):
+        try:
+            frame_number = i * frame_skip
             
-            # Calculate distance matrix with periodic boundaries
-            full_dm = structure.get_all_distances(mic=True)
+            full_dm = frame.get_all_distances(mic=True)
             n_atoms = len(atom_indices)
             distance_matrix = np.zeros((n_atoms, n_atoms))
-            for i, idx_i in enumerate(atom_indices):
-                for j, idx_j in enumerate(atom_indices):
-                    distance_matrix[i, j] = full_dm[idx_i, idx_j]
             
-            # Extract positions (for visualization purposes)
-            positions = structure.positions[atom_indices]
+            for i_local, idx_i in enumerate(atom_indices):
+                if idx_i >= len(frame):
+                    print(f"Warning: Atom index {idx_i} out of range for frame with {len(frame)} atoms. Skipping.")
+                    continue
+                for j_local, idx_j in enumerate(atom_indices):
+                    if idx_j >= len(frame):
+                        continue
+                    distance_matrix[i_local, j_local] = full_dm[idx_i, idx_j]
             
-            # Find clusters
-            db = DBSCAN(eps=threshold, min_samples=min_samples, metric='precomputed').fit(distance_matrix)
+            db = DBSCAN(
+                eps=threshold, 
+                min_samples=min_samples, 
+                metric='precomputed'
+            ).fit(distance_matrix)
+            
             labels = db.labels_
             
-            # Store frame data for visualization
-            frame_data = {
-                'structure': structure.copy(),
-                'positions': positions.copy(),
-                'labels': labels.copy()
-            }
-            
-            if frame_index == 0:
-                first_frame_data = frame_data
-            last_frame_data = frame_data
+            # Extract positions for visualization
+            positions = frame.positions[atom_indices]
             
             # Calculate silhouette score
             silhouette_avg = calculate_silhouette_score(distance_matrix, labels)
@@ -536,54 +559,31 @@ def analyze_trajectory(trajectory_path, atom_indices_path, threshold, min_sample
             num_clusters = cluster_info["num_clusters"]
             outlier_count = cluster_info["outlier_count"]
             avg_cluster_size = cluster_info["avg_cluster_size"]
-            cluster_indices = {k: np.where(labels == k)[0] for k in np.unique(labels) if k != -1}
+            cluster_to_original = cluster_info["cluster_to_original"]
             
-            # Store results
-            results.append((
-                frame_number, 
-                num_clusters,
-                outlier_count,
-                silhouette_avg, 
-                avg_cluster_size
-            ))
+            if save_html_visualizations and (i == 0 or i == len(trajectory) - 1):
+                frame_prefix = "first" if i == 0 else "last"
+                html_path = os.path.join(output_dir, f"{frame_prefix}_frame_clusters.html")
+                create_html_visualization(
+                    positions=positions, 
+                    labels=labels, 
+                    title=f"Frame {frame_number} Clusters", 
+                    save_path=html_path,
+                    cell_dimensions=frame.cell.lengths()  
+                )
             
-            # Write frame data to the file
-            f_frames.write(f"Frame {frame_number}:\n")
-            f_frames.write(f"  Number of Clusters: {num_clusters}\n")
-            f_frames.write(f"  Number of Outliers: {outlier_count}\n")
-            f_frames.write(f"  Silhouette Score: {silhouette_avg:.4f}\n")
-            f_frames.write(f"  Average Cluster Size: {avg_cluster_size:.2f}\n")
-            f_frames.write("  Detailed Cluster Information:\n")
-            
-            for label in sorted(cluster_indices.keys()):
-                indices = cluster_indices[label]
-                f_frames.write(f"    Cluster {label}: {len(indices)} points\n")
-            
-            f_frames.write("\n")
+            results.append([frame_number, num_clusters, outlier_count, silhouette_avg, avg_cluster_size])
+
+        except Exception as e:
+            print(f"Error processing frame {i}: {e}")
+            results.append([i * frame_skip, 0, 0, 0.0, 0.0])
     
-    print(f"Per-frame data saved to: {frame_data_file}")
+    print(f"Trajectory analysis complete: {len(results)} frames processed")
     
-    # Save HTML visualizations for first and last frames if requested
-    if save_html_visualizations and first_frame_data and last_frame_data:
-        # Create first frame visualization
-        first_html_path = os.path.join(output_dir, f"{base_traj_name}_first_frame_clusters.html")
-        create_html_visualization(
-            positions=first_frame_data['positions'],
-            labels=first_frame_data['labels'],
-            title=f"Clusters in First Frame (Frame 0)",
-            save_path=first_html_path
-        )
+    if not results:
+        print("Warning: No results were generated from trajectory analysis")
+        return []
         
-        # Create last frame visualization
-        last_frame_number = (len(results) - 1) * skip_frames
-        last_html_path = os.path.join(output_dir, f"{base_traj_name}_last_frame_clusters.html")
-        create_html_visualization(
-            positions=last_frame_data['positions'],
-            labels=last_frame_data['labels'],
-            title=f"Clusters in Last Frame (Frame {last_frame_number})",
-            save_path=last_html_path
-        )
-    
     return results
 
 
@@ -611,7 +611,6 @@ def save_analysis_results(analysis_results, output_dir="clustering_results", out
     output_txt_file = os.path.join(output_dir, f"{output_prefix}.txt")
     output_pickle_file = os.path.join(output_dir, f"{output_prefix}.pkl")
 
-    # Save the analysis results to a CSV file
     with open(output_csv_file, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
         csv_writer.writerow([
@@ -624,7 +623,6 @@ def save_analysis_results(analysis_results, output_dir="clustering_results", out
         for result in analysis_results:
             csv_writer.writerow(result)
 
-    # Save the analysis results to a text file
     with open(output_txt_file, 'w') as f:
         # Calculate averages
         frame_numbers = [result[0] for result in analysis_results]
@@ -655,7 +653,6 @@ def save_analysis_results(analysis_results, output_dir="clustering_results", out
             f.write(f"  Silhouette Score: {silhouette_avg:.4f}\n")
             f.write(f"  Average Cluster Size: {avg_cluster_size:.2f}\n\n")
 
-    # Save the analysis results to a pickle file
     with open(output_pickle_file, 'wb') as picklefile:
         pickle.dump(analysis_results, picklefile)
 
@@ -695,7 +692,6 @@ def plot_analysis_results(pickle_file, output_dir=None):
     avg_silhouette = np.mean(silhouette_scores)
     avg_avg_cluster_size = np.mean(avg_cluster_sizes)
 
-    # Create subplots with individual sizes
     fig, axs = plt.subplots(4, 1, figsize=(18, 16), sharex=True)
 
     # Plot for avg_cluster_sizes
@@ -735,45 +731,39 @@ def plot_analysis_results(pickle_file, output_dir=None):
     axs[3].legend(fontsize=12)
     axs[3].set_xlabel('Frame Number', fontsize=16)
 
-    # Add a shared title
     plt.suptitle('Clustering Analysis Results', y=0.98, fontsize=20)
 
-    # Adjust layout to prevent overlapping labels
     plt.tight_layout()
     plt.subplots_adjust(top=0.95)
 
-    # Determine output directory if not provided
     if output_dir is None:
         output_dir = os.path.dirname(pickle_file)
     
-    # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    # Create plot filename
     output_base = os.path.splitext(os.path.basename(pickle_file))[0]
     plot_file = os.path.join(output_dir, f"{output_base}_plot.png")
     
-    # Save the figure
     plt.savefig(plot_file, dpi=300, bbox_inches='tight')
     
-    # Show the plot
     plt.show()
     
     print(f"Analysis plot saved to: {plot_file}")
 
 
-def cluster_analysis(trajectory_path, atom_indices_path, threshold, min_samples=2, 
+def cluster_analysis(traj_path, indices_path, threshold, min_samples=2, 
                     mode='single', output_dir="clustering", custom_frame_index=None,
-                    skip_frames=10, output_prefix="clustering_results"):
+                    frame_skip=10, output_prefix="clustering_results"):
     """
     Analyze molecular structures with DBSCAN clustering.
     
     Parameters
     ----------
-    trajectory_path : str
-        Path to trajectory file (ASE compatible format)
-    atom_indices_path : str
-        Path to numpy array file containing atom indices
+    traj_path : str
+        Path to trajectory file (supports any ASE-readable format like XYZ)
+    indices_path : Union[str, List[int], np.ndarray]
+        Either a path to numpy file containing atom indices to analyze,
+        or a direct list/array of atom indices
     threshold : float
         DBSCAN clustering threshold (eps parameter)
     min_samples : int, optional
@@ -784,7 +774,7 @@ def cluster_analysis(trajectory_path, atom_indices_path, threshold, min_samples=
         Directory to save output files (default: "clustering")
     custom_frame_index : int, optional
         Specific frame number to analyze in 'single' mode. If None, the last frame is analyzed
-    skip_frames : int, optional
+    frame_skip : int, optional
         Skip frames in trajectory analysis (default: 10)
     output_prefix : str, optional
         Prefix for output file names in trajectory analysis (default: "clustering_results")
@@ -794,12 +784,15 @@ def cluster_analysis(trajectory_path, atom_indices_path, threshold, min_samples=
     dict or list
         Analysis result (dict for single frame, list for trajectory)
     """
-    # Create base output directory
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output files will be saved to: {output_dir}")
     
-    # Load atom indices
-    atom_indices = np.load(atom_indices_path)
+    if isinstance(indices_path, str):
+        atom_indices = np.load(indices_path)
+        print(f"Loaded {len(atom_indices)} atoms for clustering from {indices_path}")
+    else:
+        atom_indices = np.array(indices_path)
+        print(f"Using {len(atom_indices)} directly provided atom indices for clustering")
     
     if mode == 'single':
         # Create a mode-specific subdirectory
@@ -807,8 +800,8 @@ def cluster_analysis(trajectory_path, atom_indices_path, threshold, min_samples=
         os.makedirs(mode_dir, exist_ok=True)
         
         # Analyze a single frame
-        analyzer = StructureAnalyzer(
-            trajectory_path, 
+        analyzer = analyze_frame(
+            traj_path, 
             atom_indices, 
             threshold, 
             min_samples,
@@ -816,34 +809,20 @@ def cluster_analysis(trajectory_path, atom_indices_path, threshold, min_samples=
             custom_frame_index=custom_frame_index
         )
         
-        # Run analysis with explicit output directory
         analysis_result = analyzer.analyze_structure(output_dir=mode_dir)
         return analysis_result
         
     else:
-        # Create a mode-specific subdirectory
         mode_dir = os.path.join(output_dir, "trajectory")
         os.makedirs(mode_dir, exist_ok=True)
         
-        # Analyze the entire trajectory
         analysis_results = analyze_trajectory(
-            trajectory_path, 
-            atom_indices_path, 
+            traj_path, 
+            atom_indices,  
             threshold, 
             min_samples, 
-            skip_frames,
+            frame_skip,
             output_dir=mode_dir,
             save_html_visualizations=True
         )
         
-        # Save analysis results to the specified output directory
-        pickle_file = save_analysis_results(
-            analysis_results, 
-            output_dir=mode_dir, 
-            output_prefix=output_prefix
-        )
-        
-        # Plot the analysis results
-        plot_analysis_results(pickle_file, output_dir=mode_dir)
-        
-        return analysis_results
