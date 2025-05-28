@@ -92,15 +92,17 @@ extensions = [
 
 # This is for autodoc, but we also need the manual mocking above
 autodoc_mock_imports = [
-    'fpsample',
-    'dscribe',
     'ase',
-    'sklearn',
-    'seaborn',
-    'joblib', 
-    'statsmodels',
-    'plotly',
-    'networkx'
+    'ase.io', 
+    'ase.units',
+    'ase.data',
+    'numpy',
+    'matplotlib',
+    'matplotlib.pyplot',
+    'scipy',
+    'scipy.optimize',
+    'pandas',
+    'joblib'
 ]
 
 autosummary_generate = True
