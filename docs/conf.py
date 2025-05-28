@@ -55,6 +55,17 @@ extensions = [
     'sphinx_copybutton',    
 ]
 
+autodoc_mock_imports = [
+    'fpsample',
+    'dscribe',
+    'ase',
+    'sklearn',
+    'seaborn',
+    'joblib', 
+    'statsmodels',
+    'plotly',
+    'networkx'
+]
 
 autosummary_generate = True
 napoleon_google_docstring = False
