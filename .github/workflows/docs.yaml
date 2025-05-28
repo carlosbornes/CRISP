@@ -22,6 +22,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r docs/requirements.txt
+          pip install -e .
       - name: Build documentation
         run: |
           cd docs
@@ -41,6 +42,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r docs/requirements.txt
+          pip install -e .
       - name: Build documentation
         run: |
           cd docs
