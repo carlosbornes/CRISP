@@ -79,7 +79,8 @@ Developer Contacts
 
 For further assistance or to discuss development-related topics, you can reach out to the following contacts:
 
-- **Developer**: Indranil Saha [indranilsaha315@gmail.com].
+- **Developer**: Indranil Saha [indranilsaha315@gmail.com] 
+- **Developer**: Daniel Willimetz [daniel.willimetz@natur.cuni.cz]
 
 - **Project Lead**: Lukas Grajciar [lukas.grajciar@natur.cuni.cz].
 
