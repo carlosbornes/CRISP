@@ -26,10 +26,29 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-# Mock the problematic modules
-sys.modules['fpsample'] = Mock()
-sys.modules['dscribe'] = Mock()
-sys.modules['dscribe.descriptors'] = Mock()
+# Mock ALL the problematic modules that might be imported
+mock_modules = [
+    'fpsample',
+    'dscribe',
+    'dscribe.descriptors',
+    'ase',
+    'ase.io', 
+    'ase.visualize',
+    'sklearn',
+    'sklearn.cluster',
+    'seaborn',
+    'joblib',
+    'statsmodels',
+    'plotly',
+    'plotly.graph_objects',
+    'plotly.subplots', 
+    'networkx',
+    'matplotlib',
+    'matplotlib.pyplot'
+]
+
+for mod_name in mock_modules:
+    sys.modules[mod_name] = Mock()
 
 # NOW it's safe to import CRISP
 import CRISP
