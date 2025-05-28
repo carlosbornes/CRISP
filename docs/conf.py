@@ -46,7 +46,8 @@ mock_modules = [
     'plotly.subplots', 
     'networkx',
     'matplotlib',
-    'matplotlib.pyplot'
+    'matplotlib.pyplot',
+    'matplotlib.animation'
 ]
 
 for mod_name in mock_modules:
