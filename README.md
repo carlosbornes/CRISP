@@ -50,7 +50,6 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 ### 7. Efficient and Robust Sampling
 - Sample structures using Furthest Point Sampling (FPS) with SOAP descriptors.
 - Efficiently subsample large databases or simulations by selecting the most diverse structures while avoiding redundancy.
-- 
 
 ### 7. Volumetric Density
 - Create 3D volumetric density maps to visualise the spatial distribution of atoms throughout a trajectory
