@@ -50,7 +50,7 @@ Results and Comparison
 **Visualization:**
 
 .. image:: ../images/specific_tutorials/rdf/case_study_rdf_page.jpg
-   :width: 800
+   :width: 600
    :alt: Radial distribution functions computed using CRISP
 
 Summary
