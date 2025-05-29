@@ -43,7 +43,7 @@ CRISP is a post-simulation analysis package built on the Atomic Simulation Envir
 
 ### 5. Coordination Analysis
 - Compute average coordination numbers for specific atom types with customizable cutoffs.
-- Analyze contact times of selected atom types to study dynamic behavior efficiently.
+- Analyse contact times of selected atom types to study dynamic behaviour efficiently.
 
 ### 6. Error Analysis
 - Accurately estimate the error of any computed property using statistical techniques.
