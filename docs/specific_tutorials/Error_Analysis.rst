@@ -31,7 +31,7 @@ Basic Error Analysis
 Case Study: Zeolite MFI Chemical Shift Analysis
 -----------------------------------------------
 
-This example demonstrates error analysis of :sup:`27`\ Al chemical shifts in zeolite MFI from 1 ns molecular dynamics trajectories.
+This example demonstrates error analysis of :sup:`27`\ Al chemical shifts in zeolite MFI from 1 ns molecular dynamics trajectories based on the work of Willimetz et al. [1]_.
 
 MD Energy Convergence Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -89,3 +89,8 @@ The autocorrelation time for chemical shift is approximately 50 fs, indicating r
    :alt: Autocorrelation function and error as a function of block size
 
 The plots show autocorrelation function decay and error convergence with simulation time.
+
+References
+----------
+
+.. [1] Willimetz, Daniel, Erlebach, Andreas, Heard, Christopher J., and Grajciar, Lukáš. ":sup:`27`\ Al NMR chemical shifts in zeolite MFI via machine learning acceleration of structure sampling and shift prediction." *Digital Discovery* 4, no. 1 (2025): 275-288.

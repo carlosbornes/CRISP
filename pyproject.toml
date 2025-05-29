@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
 [project]
 name = "CRISP"
-description = "Atom Indices"
+description = "CRISP is a post-simulation analysis package"
 dynamic = ["version"]
 readme = "README.md"
 authors = [

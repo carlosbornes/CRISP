@@ -1,7 +1,7 @@
 H-Bond Analysis and Visualization
 ==================================
 
-We examine the hydrogen-bonding network, a critical aspect of water's structure and dynamics. We compare the average number of hydrogen bonds (H-bonds) per water molecule calculated by CRISP against values reported by Villard et al., referencing the approximate experimental value for bulk water. CRISP employs a well-defined geometric criterion based on donor-hydrogen-acceptor angle and hydrogen-acceptor distance cutoffs. This direct geometric definition is commonly used in H-bond analysis and provides a clear, reproducible measure of local connectivity.
+We examine the hydrogen-bonding network, a critical aspect of water's structure and dynamics. We compare the average number of hydrogen bonds (H-bonds) per water molecule calculated by CRISP against values reported by Villard et al. [1]_, referencing the approximate experimental value for bulk water. CRISP employs a well-defined geometric criterion based on donor-hydrogen-acceptor angle and hydrogen-acceptor distance cutoffs. This direct geometric definition is commonly used in H-bond analysis and provides a clear, reproducible measure of local connectivity.
 
 Analysis Parameters
 -------------------
@@ -60,8 +60,10 @@ Multi-Functional Analysis
             graph_frame_index=0
         )
 
-CRISP Results
--------------
+Results and Comparison
+----------------------
+
+The analysis reveals functional-dependent hydrogen bonding patterns consistent with the structural differences observed in the RDF analysis. CRISP's results align well with the trends reported by Villard et al. [1]_, showing that meta-GGA functionals produce varying degrees of water structure.
 
 **Visualization:**
 
@@ -69,4 +71,12 @@ CRISP Results
    :width: 800
    :alt: Comparison of average hydrogen bonds per water molecule
 
+Summary
+-------
+
 CRISP's geometric approach provides direct and physically meaningful assessment of hydrogen bonding networks, enabling detailed analysis of local connectivity patterns. The method offers comprehensive visualization options and statistical analysis across trajectory frames with reproducible, well-defined parameters.
+
+References
+----------
+
+.. [1] Villard, Justin, Bircher, Martin P., and Rothlisberger, Ursula. "Structure and dynamics of liquid water from ab initio simulations: adding Minnesota density functionals to Jacob's ladder." *Chemical Science* 15, no. 12 (2024): 4434-4451.

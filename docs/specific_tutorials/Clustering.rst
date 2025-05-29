@@ -1,7 +1,7 @@
 Clustering
 ==================================
 
-This case study re-analyses molecular dynamics simulation data from Heard et al., investigating platinum clusters (Pt₃, Pt₅) migration within CHA zeolite. The original work used custom reactive neural network potentials to perform ~25 ns simulations at elevated temperatures (750 K, 1000 K, 1250 K). We apply CRISP's clustering module using DBSCAN clustering.
+This case study re-analyses molecular dynamics simulation data from Heard et al. [1]_, investigating platinum clusters (Pt₃, Pt₅) migration within CHA zeolite. The original work used custom reactive neural network potentials to perform ~25 ns simulations at elevated temperatures (750 K, 1000 K, 1250 K). We apply CRISP's clustering module using DBSCAN clustering.
 
 DBSCAN Parameter Details
 ------------------------
@@ -98,4 +98,9 @@ Summary
 -------
 
 The dual-threshold approach reveals different cluster dynamics: ε = 3.0 Å shows both clusters as cohesive entities, while ε = 2.6 Å reveals internal bond dynamics. Pt₃ maintains rigid trimer structure; Pt₅ undergoes frequent rearrangements and fragmentation. This demonstrates CRISP's capability to reveal cluster behavior at different connectivity definitions.
+
+References
+----------
+
+.. [1] Heard, Christopher J., Grajciar, Lukáš, and Erlebach, Andreas. "Migration of zeolite-encapsulated subnanometre platinum clusters via reactive neural network potentials." *Nanoscale* 16, no. 16 (2024): 8108-8118.
 
