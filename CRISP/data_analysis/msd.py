@@ -426,6 +426,12 @@ def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end
     D = slope / (2 * dimension) * conversion_angstrom2_fs_to_cm2_s
     error = std_err / (2 * dimension) * conversion_angstrom2_fs_to_cm2_s
     
+    # goodness‐of‐fit R²
+    y_model = fit_func(x_fit)
+    ss_res  = np.sum((y_fit - y_model)**2)
+    ss_tot  = np.sum((y_fit - np.mean(y_fit))**2)
+    r2      = 1 - ss_res/ss_tot
+
     if plot_msd:
         plt.figure(figsize=(10, 6))
         # Convert time from fs to ps for plotting
@@ -441,8 +447,7 @@ def calculate_diffusion_coefficient(msd_times, msd_values, start_index=None, end
         plt.savefig('msd_analysis.png', dpi=300, bbox_inches='tight')
         plt.show()
     
-    print(f'Diffusion Coefficient: {D:.2e} cm²/s')
-    print(f'Error in the Fit: {error:.2e} cm²/s')
+    print(f"R² = {r2:.4f}")
     
     return D, error
 
@@ -731,8 +736,10 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None, d
         
         method = "Block Averaging" if use_block_averaging else "Standard Fit"
         print(f"\nMSD Analysis Results ({method}):")
-        # Standard Error of the Mean = error
-        print(f"Diffusion Coefficient: D = {D:.4e} ± {error:.4e} cm²/s ({100*error/D:.1f}%)")
+        if use_block_averaging:
+            print(f"Diffusion Coefficient: D = {D:.4e} ± {error:.4e} cm²/s ({100*error/D:.1f}%)")
+        else:
+            print(f"Diffusion Coefficient: D = {D:.4e} cm²/s")
         
         return D, error
         
