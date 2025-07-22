@@ -78,7 +78,7 @@ pip install .
 
 3. In a virtual environment as a standalone installation, please install the dependencies via the command line, type 
 ```
-pip install joblib statsmodels IPython pandas scikit-learn plotly seaborn jupyter networkx
+pip install ase>=3.23.0 scikit-learn>=1.4.2 seaborn>=0.12.2 joblib>=1.2.0 fpsample>=0.3.3 statsmodels>=0.14.0 pandas>=2.0.3 plotly>=5.9.0 networkx>=3.1
 ```
 
 # Current Modules
