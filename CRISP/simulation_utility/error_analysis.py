@@ -112,7 +112,7 @@ def autocorrelation_analysis(data, max_lag=None, threshold=0.05, plot_acf=False)
         mean_value = np.mean(data, axis=0)
         std_value = np.std(data, axis=0, ddof=1)
         if max_lag is None:
-            max_lag = min(1000, N // 10)
+            max_lag = min(N // 20)
         acf_values = vector_acf(data, max_lag)
         opt_lag = optimal_lag(acf_values, threshold)
         
