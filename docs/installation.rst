@@ -12,12 +12,14 @@ following software versions or higher installed on your system:
 - pandas: 2.0.3
 - plotly: 5.9.0
 - networkx: 3.1
+- fpsample>=0.3.3
+
 
 You can install all the required packages using the following command:
 
 .. code-block:: bash
 
-    pip install ase>=3.23.0 scikit-learn>=1.4.2 seaborn>=0.12.2 joblib>=1.2.0 statsmodels>=0.14.0 pandas>=2.0.3 plotly>=5.9.0 networkx>=3.1
+    pip install ase>=3.23.0 scikit-learn>=1.4.2 seaborn>=0.12.2 joblib>=1.2.0 fpsample>=0.3.3 statsmodels>=0.14.0 pandas>=2.0.3 plotly>=5.9.0 networkx>=3.1
 
 
 Next, clone the CRISP repository using the git clone command:

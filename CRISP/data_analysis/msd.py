@@ -12,10 +12,13 @@ import csv
 import sys
 from ase.units import fs
 from ase.units import fs as fs_conversion
+from ase.data import chemical_symbols
 from scipy.optimize import curve_fit
 import pandas as pd
 import os
+import traceback
 from joblib import Parallel, delayed, cpu_count
+
 
 def read_trajectory_chunk(traj_path, index_slice, frame_skip=1):
     """
@@ -119,8 +122,8 @@ def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0, n_jobs=-
 """
     # Time values
     total_images = len(traj) - ignore_n_images
-    timesteps = np.linspace(0, total_images * timestep, total_images + 1)
-    msd_times = timesteps[:-1] / fs_conversion  # Convert to femtoseconds
+    timesteps = np.linspace(0, total_images * timestep, total_images+1)
+    msd_times = timesteps[:] / fs_conversion  # Convert to femtoseconds
     
     # Reference frame
     reference_frame = traj[ignore_n_images]
@@ -140,7 +143,6 @@ def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0, n_jobs=-
             # An atomic number (e.g., 8 for oxygen)
             atomic_numbers = atoms.get_atomic_numbers()
             direction_indices = [i for i, z in enumerate(atomic_numbers) if z == msd_direction_atom]
-            from ase.data import chemical_symbols
             symbol = chemical_symbols[msd_direction_atom]
             print(f"Calculating directional MSD for {len(direction_indices)} {symbol} atoms (Z={msd_direction_atom})")
     
@@ -171,7 +173,7 @@ def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0, n_jobs=-
             return msd_times, msd_x, msd_y, msd_z
         else:
             msd_values = np.array([r[1] for r in results])
-            return msd_values, msd_times
+            return msd_values, msd_times[:]
     
     # MSD per atom type
     else:
@@ -544,7 +546,8 @@ def plot_diffusion_time_series(msd_times, msd_values, min_window=10, with_interc
 def calculate_save_msd(traj_path, timestep_fs, indices_path=None, 
                       ignore_n_images=0, output_file="msd_results.csv", 
                       frame_skip=1, n_jobs=-1, output_dir="traj_csv_detailed",
-                      msd_direction=False, msd_direction_atom=None):
+                      msd_direction=False, msd_direction_atom=None,
+                      use_windowed=True, lag_times_fs=None):
     """
     Calculate MSD data and save to CSV file.
     
@@ -570,6 +573,10 @@ def calculate_save_msd(traj_path, timestep_fs, indices_path=None,
         Whether to calculate directional MSD (default: False)
     msd_direction_atom : str or int, optional
         Atom symbol or atomic number for directional analysis (default: None)
+    use_windowed : bool, optional
+        Whether to use the windowed approach for more robust statistics (default: True)
+    lag_times_fs : list of float, optional
+        List of lag times (in fs) for which to compute MSD (default: None, use all possible lags)
         
     Returns
     -------
@@ -606,25 +613,50 @@ def calculate_save_msd(traj_path, timestep_fs, indices_path=None,
     print(f"Using timestep: {timestep_fs} fs")
 
     print("Calculating MSD using parallel processing...")
-    if indices_path:
-        msd_data = calculate_msd(
-            traj=traj, 
-            timestep=timestep,
-            atom_indices=atom_indices,
-            ignore_n_images=ignore_n_images,
-            n_jobs=n_jobs,
-            msd_direction=msd_direction
-        )
+    if use_windowed:
+        print("Using windowed approach for MSD calculation (averaging over all time origins)")
+        if indices_path:
+            msd_data = calculate_msd_windowed(
+                traj=traj, 
+                timestep=timestep,
+                atom_indices=atom_indices,
+                ignore_n_images=ignore_n_images,
+                n_jobs=n_jobs,
+                msd_direction=msd_direction,
+                lag_times_fs=lag_times_fs
+            )
+        else:
+            msd_data = calculate_msd_windowed(
+                traj=traj, 
+                timestep=timestep,
+                atom_indices=atom_indices,
+                ignore_n_images=ignore_n_images,
+                n_jobs=n_jobs,
+                msd_direction=msd_direction,
+                msd_direction_atom=msd_direction_atom,
+                lag_times_fs=lag_times_fs
+            )
     else:
-        msd_data = calculate_msd(
-            traj=traj, 
-            timestep=timestep,
-            atom_indices=atom_indices,
-            ignore_n_images=ignore_n_images,
-            n_jobs=n_jobs,
-            msd_direction=msd_direction,
-            msd_direction_atom=msd_direction_atom
-        )
+        print("Using single reference frame approach for MSD calculation")
+        if indices_path:
+            msd_data = calculate_msd(
+                traj=traj, 
+                timestep=timestep,
+                atom_indices=atom_indices,
+                ignore_n_images=ignore_n_images,
+                n_jobs=n_jobs,
+                msd_direction=msd_direction
+            )
+        else:
+            msd_data = calculate_msd(
+                traj=traj, 
+                timestep=timestep,
+                atom_indices=atom_indices,
+                ignore_n_images=ignore_n_images,
+                n_jobs=n_jobs,
+                msd_direction=msd_direction,
+                msd_direction_atom=msd_direction_atom
+            )
 
     saved_files = save_msd_data(
         msd_data=msd_data, 
@@ -676,9 +708,16 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None, d
         
         # Diffusion coefficient
         if use_block_averaging:
+            # Use fit_start and fit_end to select the fit zone
+            fit_start_idx = fit_start if fit_start is not None else 0
+            fit_end_idx = fit_end if fit_end is not None else len(msd_times)
+            
+            msd_times_fit = msd_times[fit_start_idx:fit_end_idx]
+            msd_values_fit = msd_values[fit_start_idx:fit_end_idx]
+            
             D, error = block_averaging_error(
-                msd_times=msd_times, 
-                msd_values=msd_values,
+                msd_times=msd_times_fit, 
+                msd_values=msd_values_fit,
                 n_blocks=n_blocks,
                 dimension=dimension,
                 with_intercept=with_intercept
@@ -745,14 +784,14 @@ def analyze_from_csv(csv_file="msd_results.csv", fit_start=None, fit_end=None, d
         
     except Exception as e:
         print(f"Error analyzing MSD data: {e}")
-        import traceback
         traceback.print_exc()
         return None, None
 
 def msd_analysis(traj_path, timestep_fs, indices_path=None, ignore_n_images=0,
                 output_dir=None, frame_skip=10, fit_start=None, fit_end=None,
                 with_intercept=False, plot_msd=False, save_csvs_in_subdir=False,
-                msd_direction=False, msd_direction_atom=None, dimension=3):
+                msd_direction=False, msd_direction_atom=None, dimension=3,
+                use_windowed=True, lag_times_fs=None):
     """
     Perform MSD analysis workflow: calculate MSD and save data.
     
@@ -784,6 +823,12 @@ def msd_analysis(traj_path, timestep_fs, indices_path=None, ignore_n_images=0,
         Whether to calculate directional MSD (default: False)
     msd_direction_atom : str or int, optional
         Atom symbol or atomic number for directional analysis (default: None)
+    dimension : int, optional
+        Dimensionality of the system: 1 for 1D, 2 for 2D, 3 for 3D (default: 3)
+    use_windowed : bool, optional
+        Whether to use the windowed approach for more robust statistics (default: True)
+    lag_times_fs : list of float, optional
+        List of lag times (in fs) for which to compute MSD (default: None, use all possible lags)
         
     Returns
     -------
@@ -811,7 +856,9 @@ def msd_analysis(traj_path, timestep_fs, indices_path=None, ignore_n_images=0,
         frame_skip=frame_skip,
         output_dir=csv_dir,
         msd_direction=msd_direction,
-        msd_direction_atom=msd_direction_atom
+        msd_direction_atom=msd_direction_atom,
+        use_windowed=use_windowed,
+        lag_times_fs=lag_times_fs
     )
     
     if isinstance(msd_data, tuple) and msd_data[0] is None:
@@ -895,12 +942,15 @@ def block_averaging_error(msd_times, msd_values, n_blocks=5, dimension=3, **kwar
         if end_idx - start_idx < 10:  
             continue
             
+        # Remove fit_start/end from kwargs for block fit            
+        block_kwargs = {k: v for k, v in kwargs.items() if k not in ['start_index', 'end_index', 'fit_start', 'fit_end']}
+            
         try:
             D, _ = calculate_diffusion_coefficient(
                 msd_times[start_idx:end_idx], 
                 msd_values[start_idx:end_idx],
                 dimension=dimension,
-                **kwargs
+                **block_kwargs
             )
             D_values.append(D)
         except Exception as e:
@@ -914,3 +964,207 @@ def block_averaging_error(msd_times, msd_values, n_blocks=5, dimension=3, **kwar
     
     return mean_D, std_error_D
 
+def calculate_frame_msd_windowed(positions_i, positions_j, atom_indices, msd_direction=False):
+    """
+    Calculate MSD between two frames for the windowed approach.
+    
+    Parameters
+    ----------
+    positions_i : numpy.ndarray
+        Positions at time i
+    positions_j : numpy.ndarray
+        Positions at time j
+    atom_indices : list
+        List of atom indices to include in MSD calculation
+    msd_direction : bool, optional
+        Whether to calculate directional MSD (default: False)
+        
+    Returns
+    -------
+    float or tuple
+        If msd_direction is False: msd_value
+        If msd_direction is True: (msd_x, msd_y, msd_z)
+    """
+    atom_positions_i = positions_i[atom_indices]
+    atom_positions_j = positions_j[atom_indices]
+    displacements = atom_positions_j - atom_positions_i
+    
+    if not msd_direction:
+        # Calculate total MSD
+        msd_value = np.sum(np.square(displacements)) / (3 * len(atom_indices))
+        return msd_value
+    else:
+        # Directional MSDs
+        msd_x = np.sum(displacements[:, 0]**2) / len(atom_indices)
+        msd_y = np.sum(displacements[:, 1]**2) / len(atom_indices)
+        msd_z = np.sum(displacements[:, 2]**2) / len(atom_indices)
+        
+        return msd_x, msd_y, msd_z
+
+def calculate_msd_windowed(
+    traj, timestep, atom_indices=None, ignore_n_images=0, n_jobs=-1, 
+    msd_direction=False, msd_direction_atom=None, lag_times_fs=None
+):
+    """
+    Calculate Mean Square Displacement (MSD) vs time using the windowed approach,
+    averaging over all possible time origins.
+
+    Parameters
+    ----------
+    traj : list of ase.Atoms
+        Trajectory data
+    timestep : float
+        Simulation timestep
+    atom_indices : numpy.ndarray, optional
+        Indices of atoms to analyze (default: all atoms)
+    ignore_n_images : int, optional
+        Number of initial images to ignore (default: 0)
+    n_jobs : int, optional
+        Number of parallel jobs to run (default: -1, use all available cores)
+    msd_direction : bool, optional
+        Whether to calculate directional MSD (default: False)
+    msd_direction_atom : str or int, optional
+        Atom symbol or atomic number to filter for directional MSD (default: None)
+    lag_times_fs : list of float, optional
+        List of lag times (in fs) for which to compute MSD (default: None, use all possible lags)
+
+    Returns
+    -------
+    tuple or dict
+        If atom_indices is provided: (msd_values, msd_times) or (msd_times, msd_x, msd_y, msd_z) if msd_direction=True
+        If atom_indices is None: A dictionary with keys for each atom type
+    """
+
+    # Time values
+    total_images = len(traj) - ignore_n_images
+    timestep_fs = timestep / fs  # Convert timestep to fs
+    n_frames = total_images
+    positions = [traj[i].positions for i in range(ignore_n_images, len(traj))]
+    positions = np.array(positions)
+
+    # Determine lag times (in frames)
+    if lag_times_fs is not None:
+        lag_frames = [int(round(lag_fs / timestep_fs)) for lag_fs in lag_times_fs if lag_fs > 0]
+        lag_frames = [lf for lf in lag_frames if 1 <= lf < n_frames]
+    else:
+        lag_frames = list(range(1, n_frames))
+
+    msd_times = np.array(lag_frames) * timestep_fs  # in fs
+
+    # MSD for specific atoms
+    if atom_indices is not None:
+        if msd_direction:
+            msd_x = np.zeros(len(lag_frames))
+            msd_y = np.zeros(len(lag_frames))
+            msd_z = np.zeros(len(lag_frames))
+            for idx, lag in enumerate(lag_frames):
+                n_pairs = n_frames - lag
+                results = Parallel(n_jobs=n_jobs)(
+                    delayed(calculate_frame_msd_windowed)(
+                        positions[i], positions[i + lag], atom_indices, True
+                    ) for i in range(n_pairs)
+                )
+                msd_x[idx] = np.mean([r[0] for r in results])
+                msd_y[idx] = np.mean([r[1] for r in results])
+                msd_z[idx] = np.mean([r[2] for r in results])
+            return msd_times, msd_x, msd_y, msd_z
+        else:
+            msd_values = np.zeros(len(lag_frames))
+            for idx, lag in enumerate(lag_frames):
+                n_pairs = n_frames - lag
+                results = Parallel(n_jobs=n_jobs)(
+                    delayed(calculate_frame_msd_windowed)(
+                        positions[i], positions[i + lag], atom_indices, False
+                    ) for i in range(n_pairs)
+                )
+                msd_values[idx] = np.mean(results)
+            return msd_values, msd_times
+
+    # MSD per atom type
+    else:
+        atoms = traj[0]
+        symbols = atoms.get_chemical_symbols()
+        unique_symbols = set(symbols)
+        
+        # A dictionary mapping symbols to their indices
+        symbol_indices = {symbol: [i for i, s in enumerate(symbols) if s == symbol] 
+                         for symbol in unique_symbols}
+        
+        # Overall MSD using all atoms
+        all_indices = list(range(len(atoms)))
+        
+        # Initialize array for overall MSD
+        overall_msd = np.zeros(len(lag_frames))
+        
+        # For each lag time, calculate the average MSD over all possible time origins
+        for idx, lag in enumerate(lag_frames):
+            n_pairs = n_frames - lag
+            results = Parallel(n_jobs=n_jobs)(
+                delayed(calculate_frame_msd_windowed)(
+                    positions[i], 
+                    positions[i + lag],
+                    all_indices,
+                    False
+                )
+                for i in range(n_pairs)
+            )
+            overall_msd[idx] = np.mean(results)
+        
+        # Dictionary to store MSD results
+        result = {'overall': (overall_msd[:], msd_times[:])}
+        
+        # Calculate MSD for each atom type
+        for symbol, indices in symbol_indices.items():
+            print(f"Calculating MSD for {symbol} atoms...")
+            calc_direction = msd_direction and (
+                (isinstance(msd_direction_atom, str) and symbol == msd_direction_atom) or
+                (isinstance(msd_direction_atom, int) and 
+                 atoms.get_atomic_numbers()[indices[0]] == msd_direction_atom)
+            )
+            
+            if calc_direction:
+                # Initialize arrays for directional MSD
+                msd_x = np.zeros(len(lag_frames))
+                msd_y = np.zeros(len(lag_frames))
+                msd_z = np.zeros(len(lag_frames))
+                
+                # For each lag time, calculate the average MSD over all possible time origins
+                for idx2, lag in enumerate(lag_frames):
+                    n_pairs = n_frames - lag
+                    results = Parallel(n_jobs=n_jobs)(
+                        delayed(calculate_frame_msd_windowed)(
+                            positions[i], 
+                            positions[i + lag],
+                            indices,
+                            True
+                        )
+                        for i in range(n_pairs)
+                    )
+                    msd_x[idx2] = np.mean([r[0] for r in results])
+                    msd_y[idx2] = np.mean([r[1] for r in results])
+                    msd_z[idx2] = np.mean([r[2] for r in results])
+                
+                result[symbol] = (msd_times[:])
+                result[f'{symbol}_x'] = (msd_x, msd_times[:])
+                result[f'{symbol}_y'] = (msd_y, msd_times[:])
+                result[f'{symbol}_z'] = (msd_z, msd_times[:])
+                
+                print(f"Saved directional MSD data for {symbol} atoms")
+            else:
+                msd_values = np.zeros(len(lag_frames))
+                for idx2, lag in enumerate(lag_frames):
+                    n_pairs = n_frames - lag
+                    results = Parallel(n_jobs=n_jobs)(
+                        delayed(calculate_frame_msd_windowed)(
+                            positions[i], 
+                            positions[i + lag],
+                            indices,
+                            False
+                        )
+                        for i in range(n_pairs)
+                    )
+                    msd_values[idx2] = np.mean(results)
+                
+                result[symbol] = (msd_values[:], msd_times[:])
+        
+        return result
