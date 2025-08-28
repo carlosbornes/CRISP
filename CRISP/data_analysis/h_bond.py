@@ -714,6 +714,3 @@ def plot_2Dheatmap(data_dict, output_dir):
     plt.show() 
     plt.close()
     print(f"H-bond structure 2D histogram saved to '{filename}'")
-
-
-
