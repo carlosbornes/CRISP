@@ -78,7 +78,7 @@ def calculate_frame_msd(frame_idx, current_frame, reference_frame, atom_indices,
     
     if not msd_direction:
         # Calculate total MSD
-        msd_value = np.sum(np.square(displacements)) / (3 * len(atom_indices))
+        msd_value = np.sum(np.square(displacements)) / (len(atom_indices))
         return frame_idx, msd_value
     else:
         # Directional MSDs
@@ -595,6 +595,15 @@ def calculate_save_msd(traj_path, timestep_fs, indices_path=None,
             traj = [traj]
         
         print(f"Loaded {len(traj)} frames after applying frame_skip={frame_skip}")
+
+        traj_nodrift = []
+        for frame in traj:
+            new_frame = frame.copy()
+            com = new_frame.get_center_of_mass()
+            new_frame.set_positions(new_frame.get_positions() - com)
+            traj_nodrift.append(new_frame)
+        traj = traj_nodrift
+
         
     except Exception as e:
         print(f"Error loading trajectory file: {e}")
@@ -991,7 +1000,7 @@ def calculate_frame_msd_windowed(positions_i, positions_j, atom_indices, msd_dir
     
     if not msd_direction:
         # Calculate total MSD
-        msd_value = np.sum(np.square(displacements)) / (3 * len(atom_indices))
+        msd_value = np.sum(np.square(displacements)) / (len(atom_indices))
         return msd_value
     else:
         # Directional MSDs
