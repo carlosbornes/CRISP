@@ -82,7 +82,7 @@ For further assistance or to discuss development-related topics, you can reach o
 - **Developer**: Indranil Saha [indranilsaha315@gmail.com] 
 - **Developer**: Daniel Willimetz [daniel.willimetz@natur.cuni.cz]
 
-- **Project Lead**: Lukas Grajciar [lukas.grajciar@natur.cuni.cz].
+- **Group Lead**: Lukáš Grajciar [lukas.grajciar@natur.cuni.cz].
 
 Acknowledgments
 ---------------
