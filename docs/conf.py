@@ -30,6 +30,8 @@ extensions = [
     'sphinx_copybutton',    
 ]
 
+autosummary_generate = True
+
 # Let autodoc handle all the mocking
 autodoc_mock_imports = [
     'ase',
