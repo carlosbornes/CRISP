@@ -9,7 +9,15 @@ requires-python = ">=3.8"
 readme = "README.md"
 authors = [{ name = "IS", email = "indranilsaha15@gmail.com" }]
 license = { text = "CC-BY-NC-SA-4.0 (see LICENSE)" }
-dependencies = ["numpy", "ase"]
+dependencies = [
+    "numpy", 
+    "ase", 
+    "fpsample>=0.3.3",
+    "dscribe>=2.0.0",
+    "matplotlib>=3.3.4", 
+    "joblib>=1.0.0",
+    "scikit-learn>=1.0.0"
+]
 
 [project.optional-dependencies]
 test = ["pytest>=6.1.2"]
