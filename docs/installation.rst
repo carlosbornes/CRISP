@@ -4,7 +4,7 @@ Installation
 To ensure that CRISP functions optimally, you must have the Python Environment(≥3.11) with the
 following software versions or higher installed on your system:
 
-- ase: 3.23.0
+- ase: 3.19.0
 - sklearn: 1.4.2
 - seaborn: 0.12.2
 - joblib: 1.2.0
