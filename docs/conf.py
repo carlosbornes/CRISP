@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 project = 'CRISP'
-copyright = '2024, Indranil Saha, Daniel Willimetz, Lukas Grajciar, '
+copyright = '2025, Indranil Saha, Daniel Willimetz, Lukas Grajciar, '
 author = 'Indranil Saha, Daniel Willimetz '
 
 version = ''
