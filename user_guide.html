@@ -1,0 +1,921 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>User Guide &#8212; CRISP  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Documentation" href="api.html" />
+    <link rel="prev" title="RDF (Radial Distribution Function)" href="specific_tutorials/RDF.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">CRISP  documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="introduction.html">
+    Introduction
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API Documentation
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="introduction.html">
+    Introduction
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API Documentation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">User Guide</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="user-guide">
+<h1>User Guide<a class="headerlink" href="#user-guide" title="Link to this heading">#</a></h1>
+<p>This user guide provides detailed information on the various modules available in the CRISP package, along with performance tips to help optimize their usage.</p>
+<p>CRISP is organized into two main subpackages:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">simulation_utility</span></code>: Tools for preparing and processing simulation data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data_analysis</span></code>: Methods for analyzing simulation results</p></li>
+</ul>
+</section>
+<section id="simulation-utility-modules">
+<h1>Simulation Utility Modules<a class="headerlink" href="#simulation-utility-modules" title="Link to this heading">#</a></h1>
+<section id="atomic-indices-classification">
+<h2>1. Atomic Indices Classification<a class="headerlink" href="#atomic-indices-classification" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.simulation_utility.atomic_indices</span></code></p>
+<p>This module allows for the classification of atoms based on custom-defined indices, making it easier to analyze specific subsets within your simulation data.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Customizable classification based on distance criteria</p></li>
+<li><p>Automatic generation of atom type indices</p></li>
+<li><p>Cutoff-based neighbor identification</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.simulation_utility.atomic_indices</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_atom_indices</span>
+
+<span class="n">cutoffs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">):</span> <span class="mf">1.2</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">):</span> <span class="mf">1.8</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">&quot;Al&quot;</span><span class="p">,</span> <span class="s2">&quot;Si&quot;</span><span class="p">):</span> <span class="mf">3.2</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">):</span> <span class="mf">3.0</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">run_atom_indices</span><span class="p">(</span><span class="s2">&quot;./wrapped_traj.traj&quot;</span><span class="p">,</span> <span class="s2">&quot;./indices_new/&quot;</span><span class="p">,</span>
+                 <span class="n">frame_index</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cutoffs</span><span class="o">=</span><span class="n">cutoffs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Choose appropriate cutoff distances to balance accuracy and computational cost</p></li>
+<li><p>Use frame_index parameter to analyze representative frames instead of entire trajectories</p></li>
+</ul>
+</section>
+<section id="atomic-trajectory-visualization">
+<h2>2. Atomic Trajectory Visualization<a class="headerlink" href="#atomic-trajectory-visualization" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.simulation_utility.atomic_traj_linemap</span></code></p>
+<p>Visualizes atomic trajectories in 3D to understand motion and structural changes.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Interactive 3D visualization of atomic trajectories</p></li>
+<li><p>Customizable frame skipping and atom selection</p></li>
+<li><p>HTML output for web-based visualization</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.simulation_utility.atomic_traj_linemap</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_atomic_trajectory</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">oxygen_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;./indices_detailed/ex_fram_ox.npy&quot;</span><span class="p">)</span>
+<span class="n">plot_atomic_trajectory</span><span class="p">(</span>
+    <span class="n">traj_path</span><span class="o">=</span><span class="s2">&quot;./wrapped_traj.traj&quot;</span><span class="p">,</span>
+    <span class="n">selected_indices</span><span class="o">=</span><span class="n">oxygen_indices</span><span class="p">,</span>
+    <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;oxygen_trajectories.html&quot;</span><span class="p">,</span>
+    <span class="n">frame_skip</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Use frame_skip to reduce computational load for long trajectories</p></li>
+<li><p>Select specific atom indices rather than visualizing all atoms</p></li>
+</ul>
+</section>
+<section id="subsampling">
+<h2>3. Subsampling<a class="headerlink" href="#subsampling" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.simulation_utility.subsampling</span></code></p>
+<p>Extract representative structures from trajectories using Farthest Point Sampling with SOAP descriptors.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>SOAP-descriptor based diversity assessment</p></li>
+<li><p>Farthest Point Sampling for systematic subset selection</p></li>
+<li><p>Convergence visualization</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.simulation_utility.subsampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">subsample</span>
+
+<span class="n">all_frames</span> <span class="o">=</span> <span class="n">subsample</span><span class="p">(</span>
+    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;./trajectory.traj&quot;</span><span class="p">,</span>
+    <span class="n">n_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">index_type</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+    <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;traj&quot;</span><span class="p">,</span>
+    <span class="n">skip</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">plot_subsample</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Use convergence plots to determine optimal subset size</p></li>
+<li><p>Consider computational budget vs. required accuracy when selecting n_samples</p></li>
+</ul>
+</section>
+<section id="error-analysis">
+<h2>4. Error Analysis<a class="headerlink" href="#error-analysis" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.simulation_utility.error_analysis</span></code></p>
+<p>Perform statistical error analysis on time-correlated simulation data using autocorrelation function and block averaging methods.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Autocorrelation function analysis with τ_int calculation</p></li>
+<li><p>Block averaging with convergence assessment</p></li>
+<li><p>Comprehensive statistical uncertainty estimation</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.simulation_utility.error_analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">error_analysis</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;energy.npy&quot;</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">error_analysis</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;acf_results&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;block_results&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Use autocorrelation analysis for statistically rigorous error estimation</p></li>
+<li><p>Compare ACF and block averaging results for validation</p></li>
+</ul>
+</section>
+<section id="interatomic-distance-calculation">
+<h2>5. Interatomic Distance Calculation<a class="headerlink" href="#interatomic-distance-calculation" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.simulation_utility.interatomic_distances</span></code></p>
+<p>Calculate and save distance matrices between atoms for further analysis.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Periodic boundary condition handling</p></li>
+<li><p>Selective atom type analysis</p></li>
+<li><p>Distance matrix storage for reuse</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.simulation_utility.interatomic_distances</span><span class="w"> </span><span class="kn">import</span> <span class="n">distance_calculation</span><span class="p">,</span> <span class="n">save_distance_matrices</span>
+
+<span class="n">full_dms</span><span class="p">,</span> <span class="n">sub_dms</span> <span class="o">=</span> <span class="n">distance_calculation</span><span class="p">(</span><span class="s2">&quot;./wrapped_traj.traj&quot;</span><span class="p">,</span>
+                                       <span class="n">frame_skip</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">index_type</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">])</span>
+<span class="n">save_distance_matrices</span><span class="p">(</span><span class="n">full_dms</span><span class="p">,</span> <span class="n">sub_dms</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">],</span>
+                      <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;distance_calculations&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Use frame_skip to reduce computational load</p></li>
+<li><p>Focus on specific atom types rather than all atoms</p></li>
+</ul>
+</section>
+</section>
+<section id="data-analysis-modules">
+<h1>Data Analysis Modules<a class="headerlink" href="#data-analysis-modules" title="Link to this heading">#</a></h1>
+<section id="contact-and-coordination-analysis">
+<h2>1. Contact and Coordination Analysis<a class="headerlink" href="#contact-and-coordination-analysis" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.data_analysis.contact_coordination</span></code></p>
+<p>Analyze coordination environments and dynamic contacts between atoms.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Coordination number analysis with custom cutoffs</p></li>
+<li><p>Contact persistence analysis</p></li>
+<li><p>Interactive visualization with heatmaps</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.data_analysis.contact_coordination</span><span class="w"> </span><span class="kn">import</span> <span class="n">coordination</span><span class="p">,</span> <span class="n">contacts</span>
+
+<span class="c1"># Coordination analysis</span>
+<span class="n">cn</span> <span class="o">=</span> <span class="n">coordination</span><span class="p">(</span><span class="s2">&quot;./wrapped_traj.traj&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">],</span>
+                 <span class="p">{(</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">):</span> <span class="mf">2.5</span><span class="p">},</span> <span class="n">skip_frames</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">plot_cn</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Contact analysis</span>
+<span class="n">sub_dm</span><span class="p">,</span> <span class="n">cal_contacts</span> <span class="o">=</span> <span class="n">contacts</span><span class="p">(</span><span class="s2">&quot;./wrapped_traj.traj&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">],</span>
+                               <span class="p">{(</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">):</span> <span class="mf">2.5</span><span class="p">},</span> <span class="n">plot_contacts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Use appropriate cutoffs based on chemical knowledge</p></li>
+<li><p>Skip frames for long trajectories to reduce computation time</p></li>
+</ul>
+</section>
+<section id="hydrogen-bond-analysis">
+<h2>2. Hydrogen Bond Analysis<a class="headerlink" href="#hydrogen-bond-analysis" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.data_analysis.h_bond</span></code></p>
+<p>Analyze hydrogen bond networks using geometric criteria based on angle and distance cutoffs.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Geometric criteria (angle and distance based)</p></li>
+<li><p>Network visualization and correlation matrices</p></li>
+<li><p>Time series analysis of H-bond counts</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.data_analysis.h_bond</span><span class="w"> </span><span class="kn">import</span> <span class="n">hydrogen_bonds</span>
+
+<span class="n">h_bonds_per_frame</span> <span class="o">=</span> <span class="n">hydrogen_bonds</span><span class="p">(</span>
+    <span class="n">traj_path</span><span class="o">=</span><span class="s2">&quot;./wrapped_traj.traj&quot;</span><span class="p">,</span>
+    <span class="n">frame_skip</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">acceptor_atoms</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">],</span>
+    <span class="n">angle_cutoff</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>
+    <span class="n">h_bond_cutoff</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span>
+    <span class="n">bond_cutoff</span><span class="o">=</span><span class="mf">1.6</span><span class="p">,</span>
+    <span class="n">plot_count</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">plot_heatmap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">plot_graph_frame</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Use relaxed cutoffs for initial screening, then refine parameters</p></li>
+<li><p>Enable specific plots based on analysis needs to save computation time</p></li>
+</ul>
+</section>
+<section id="radial-distribution-function-rdf">
+<h2>3. Radial Distribution Function (RDF)<a class="headerlink" href="#radial-distribution-function-rdf" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.data_analysis.prdf</span></code></p>
+<p>Calculate radial distribution functions for spatial relationship analysis.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Partial RDF (PRDF) calculation for specific atom pairs</p></li>
+<li><p>Automatic binning and periodic boundary condition handling</p></li>
+<li><p>Interactive and static visualization options</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.data_analysis.prdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">analyze_rdf</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">analyze_rdf</span><span class="p">(</span>
+    <span class="n">use_prdf</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">rmax</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">traj_path</span><span class="o">=</span><span class="s2">&quot;./trajectory.traj&quot;</span><span class="p">,</span>
+    <span class="n">nbins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">frame_skip</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">atomic_indices</span><span class="o">=</span><span class="p">(</span><span class="n">pt_indices</span><span class="p">,</span> <span class="n">pt_indices</span><span class="p">),</span>
+    <span class="n">create_plots</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Adjust rmax to focus on relevant distance ranges</p></li>
+<li><p>Use frame_skip for long trajectories</p></li>
+<li><p>Limit analysis to essential atom pairs</p></li>
+</ul>
+</section>
+<section id="mean-square-displacement-msd">
+<h2>4. Mean Square Displacement (MSD)<a class="headerlink" href="#mean-square-displacement-msd" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.data_analysis.msd</span></code></p>
+<p>Calculate and analyze Mean Square Displacement to study diffusion properties.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>Two-step analysis: MSD calculation and diffusion coefficient extraction</p></li>
+<li><p>Linear fitting with statistical error estimation</p></li>
+<li><p>Visual representation with fit lines</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.data_analysis.msd</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_save_msd</span><span class="p">,</span> <span class="n">analyze_from_csv</span>
+
+<span class="c1"># Step 1: Calculate MSD</span>
+<span class="n">msd_values</span><span class="p">,</span> <span class="n">msd_times</span> <span class="o">=</span> <span class="n">calculate_save_msd</span><span class="p">(</span>
+    <span class="n">traj_file</span><span class="o">=</span><span class="s2">&quot;./trajectory.traj&quot;</span><span class="p">,</span>
+    <span class="n">timestep_value</span><span class="o">=</span><span class="mf">5000.0</span><span class="p">,</span>
+    <span class="n">indices_file</span><span class="o">=</span><span class="s2">&quot;./indices.npy&quot;</span><span class="p">,</span>
+    <span class="n">output_file</span><span class="o">=</span><span class="s2">&quot;msd_results.csv&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Step 2: Analyze diffusion</span>
+<span class="n">D</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">analyze_from_csv</span><span class="p">(</span><span class="s2">&quot;msd_results.csv&quot;</span><span class="p">,</span> <span class="n">plot_msd</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Use representative atom selection instead of all atoms</p></li>
+<li><p>Consider trajectory subsampling for very long simulations</p></li>
+</ul>
+</section>
+<section id="clustering-analysis">
+<h2>5. Clustering Analysis<a class="headerlink" href="#clustering-analysis" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.data_analysis.clustering</span></code></p>
+<p>Identify atomic clusters using DBSCAN clustering algorithms.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>DBSCAN clustering with periodic boundary conditions</p></li>
+<li><p>Single-frame and trajectory-based analysis</p></li>
+<li><p>3D visualization and cluster statistics</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.data_analysis.clustering</span><span class="w"> </span><span class="kn">import</span> <span class="n">analyze_frame</span><span class="p">,</span> <span class="n">analyze_trajectory</span>
+
+<span class="c1"># Single frame analysis</span>
+<span class="n">analyzer</span> <span class="o">=</span> <span class="n">analyze_frame</span><span class="p">(</span>
+    <span class="n">traj_path</span><span class="o">=</span><span class="s2">&quot;./trajectory.traj&quot;</span><span class="p">,</span>
+    <span class="n">atom_indices</span><span class="o">=</span><span class="s2">&quot;./indices.npy&quot;</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="o">=</span><span class="mf">2.6</span><span class="p">,</span>
+    <span class="n">min_samples</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">custom_frame_index</span><span class="o">=</span><span class="mi">8100</span>
+<span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">analyze_structure</span><span class="p">(</span><span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;clustering_results&quot;</span><span class="p">)</span>
+
+<span class="c1"># Trajectory analysis</span>
+<span class="n">analysis_results</span> <span class="o">=</span> <span class="n">analyze_trajectory</span><span class="p">(</span>
+    <span class="n">traj_path</span><span class="o">=</span><span class="s2">&quot;./trajectory.traj&quot;</span><span class="p">,</span>
+    <span class="n">indices_path</span><span class="o">=</span><span class="s2">&quot;./indices.npy&quot;</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+    <span class="n">min_samples</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">frame_skip</span><span class="o">=</span><span class="mi">100</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Tune threshold and min_samples parameters based on physical understanding</p></li>
+<li><p>Use frame_skip for trajectory analysis to reduce computational load</p></li>
+<li><p>Consider using different thresholds to explore various connectivity definitions</p></li>
+</ul>
+</section>
+<section id="volumetric-density">
+<h2>6. Volumetric Density<a class="headerlink" href="#volumetric-density" title="Link to this heading">#</a></h2>
+<p><strong>Module</strong>: <code class="docutils literal notranslate"><span class="pre">CRISP.data_analysis.volumetric_atomic_density</span></code></p>
+<p>Create 3D volumetric density maps to visualize the spatial distribution of atoms throughout a trajectory.</p>
+<p><strong>Key Features</strong>:</p>
+<ul class="simple">
+<li><p>3D density mapping with interactive visualizations</p></li>
+<li><p>Optional 2D projections (XY, YZ, XZ) for cross-sectional analysis</p></li>
+<li><p>Flexible thresholding (relative or absolute)</p></li>
+<li><p>Data export in NPZ format for further analysis</p></li>
+<li><p>Framework integration with selective atom visualization</p></li>
+</ul>
+<p><strong>Example Usage</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">CRISP.data_analysis.volumetric_atomic_density</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_density_map</span>
+
+<span class="c1"># Basic density map with projections</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">create_density_map</span><span class="p">(</span>
+    <span class="n">traj_path</span><span class="o">=</span><span class="s2">&quot;./trajectory.traj&quot;</span><span class="p">,</span>
+    <span class="n">indices_path</span><span class="o">=</span><span class="s2">&quot;./atom_indices.npy&quot;</span><span class="p">,</span>
+    <span class="n">frame_skip</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">opacity</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+    <span class="n">show_projections</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">save_density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;./density_analysis&quot;</span><span class="p">,</span>
+    <span class="n">output_file</span><span class="o">=</span><span class="s2">&quot;density_map.html&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Comparative analysis with different projection modes</span>
+<span class="n">projection_options</span> <span class="o">=</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">show_projections</span> <span class="ow">in</span> <span class="n">projection_options</span><span class="p">:</span>
+    <span class="n">proj_text</span> <span class="o">=</span> <span class="s2">&quot;with_projections&quot;</span> <span class="k">if</span> <span class="n">show_projections</span> <span class="k">else</span> <span class="s2">&quot;no_projections&quot;</span>
+    <span class="n">create_density_map</span><span class="p">(</span>
+        <span class="n">traj_path</span><span class="o">=</span><span class="s2">&quot;./trajectory.traj&quot;</span><span class="p">,</span>
+        <span class="n">indices_path</span><span class="o">=</span><span class="s2">&quot;./indices.npy&quot;</span><span class="p">,</span>
+        <span class="n">frame_skip</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">opacity</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+        <span class="n">show_projections</span><span class="o">=</span><span class="n">show_projections</span><span class="p">,</span>
+        <span class="n">save_projection_images</span><span class="o">=</span><span class="n">show_projections</span><span class="p">,</span>
+        <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;./density_comparison&quot;</span><span class="p">,</span>
+        <span class="n">output_file</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;density_</span><span class="si">{</span><span class="n">proj_text</span><span class="si">}</span><span class="s2">.html&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Tips</strong>:</p>
+<ul class="simple">
+<li><p>Use appropriate frame_skip values to balance accuracy and computational efficiency</p></li>
+<li><p>Start with threshold=0.0 to see all density regions, then adjust for focus areas</p></li>
+<li><p>Use save_density=True to avoid recomputation when adjusting visualization parameters</p></li>
+<li><p>Consider omit_static_indices to focus on mobile species in complex systems</p></li>
+<li><p>Adjust nbins parameter based on system size and required resolution</p></li>
+</ul>
+<p><strong>Applications</strong>:</p>
+<ul class="simple">
+<li><p>Zeolite guest molecule distribution analysis</p></li>
+<li><p>Diffusion pathway identification in porous materials</p></li>
+<li><p>Adsorption site characterization</p></li>
+<li><p>Phase behavior studies in confined systems</p></li>
+<li><p>Structural flexibility analysis</p></li>
+</ul>
+</section>
+</section>
+<section id="general-performance-tips">
+<h1>General Performance Tips<a class="headerlink" href="#general-performance-tips" title="Link to this heading">#</a></h1>
+<p><strong>Memory Management</strong>:</p>
+<ul class="simple">
+<li><p>Use frame skipping for long trajectories</p></li>
+<li><p>Focus analysis on specific atom types or regions of interest</p></li>
+<li><p>Save intermediate results to avoid recomputation</p></li>
+</ul>
+<p><strong>Parallel Processing</strong>:</p>
+<ul class="simple">
+<li><p>Consider using multiple cores for trajectory analysis</p></li>
+<li><p>Batch process multiple systems or conditions</p></li>
+<li><p>Use efficient data structures (numpy arrays) for large datasets</p></li>
+</ul>
+<p><strong>Parameter Optimization</strong>:</p>
+<ul class="simple">
+<li><p>Start with reasonable default parameters based on chemical knowledge</p></li>
+<li><p>Use convergence plots and validation against experimental data</p></li>
+<li><p>Perform sensitivity analysis to understand parameter effects</p></li>
+</ul>
+</section>
+<section id="further-reading">
+<h1>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">#</a></h1>
+<p>For more detailed information, including advanced usage and troubleshooting, please refer to the <a class="reference internal" href="developer_guide.html"><span class="doc">Developer Guide</span></a> and <a class="reference internal" href="tutorials.html"><span class="doc">Tutorials</span></a>.</p>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="specific_tutorials/RDF.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">RDF (Radial Distribution Function)</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="api.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API Documentation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">User Guide</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#simulation-utility-modules">Simulation Utility Modules</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#atomic-indices-classification">1. Atomic Indices Classification</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#atomic-trajectory-visualization">2. Atomic Trajectory Visualization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#subsampling">3. Subsampling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#error-analysis">4. Error Analysis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interatomic-distance-calculation">5. Interatomic Distance Calculation</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#data-analysis-modules">Data Analysis Modules</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contact-and-coordination-analysis">1. Contact and Coordination Analysis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hydrogen-bond-analysis">2. Hydrogen Bond Analysis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#radial-distribution-function-rdf">3. Radial Distribution Function (RDF)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mean-square-displacement-msd">4. Mean Square Displacement (MSD)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#clustering-analysis">5. Clustering Analysis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#volumetric-density">6. Volumetric Density</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#general-performance-tips">General Performance Tips</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#further-reading">Further Reading</a></li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/user_guide.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Indranil Saha, Daniel Willimetz, Lukáš Grajciar.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
