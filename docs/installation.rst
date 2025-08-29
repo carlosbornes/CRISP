@@ -27,7 +27,7 @@ Next, clone the CRISP repository using the git clone command:
 
 .. code-block:: bash
 
-    git clone git@github.com:Indranil17/CRISP_HOST.git
+    git clone git@github.com:Indranil17/CRISP.git
 
 
 Now, navigate into the CRISP directory and install the package using pip:
