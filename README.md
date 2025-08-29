@@ -10,7 +10,7 @@ CRISP
 
 <img src="https://github.com/Indranil17/CRISP_HOST/blob/main/crisp_logo2.png" width="300">
 
-# CRISP (A Comprehensive Repository for Insightful Simulation Post-Processing)
+# CRISP: Enhancing ASE Workflows with Advanced Molecular Simulation Post-Processing
 
 ## What is CRISP?
 CRISP is a post-simulation analysis package built on the Atomic Simulation Environment (ASE). It is designed for efficient and insightful analysis of molecular dynamics (MD) and other simulations, enabling in-depth exploration with just a few lines of code, including powerful visualisation options.
