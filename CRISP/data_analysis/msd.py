@@ -234,7 +234,9 @@ def calculate_msd(traj, timestep, atom_indices=None, ignore_n_images=0, n_jobs=-
                 msd_y = np.array([r[2] for r in symbol_results])
                 msd_z = np.array([r[3] for r in symbol_results])
                 
-                result[symbol] = (msd_times)
+                # Fix: also store total and ensure (values, times) tuples
+                total_values = msd_x + msd_y + msd_z
+                result[symbol] = (total_values, msd_times)
                 result[f'{symbol}_x'] = (msd_x, msd_times)
                 result[f'{symbol}_y'] = (msd_y, msd_times)
                 result[f'{symbol}_z'] = (msd_z, msd_times)
@@ -290,15 +292,18 @@ def save_msd_data(msd_data, csv_file_path, output_dir="traj_csv_detailed"):
             
             base_path, ext = os.path.splitext(base_filename)
             
+            # Save total (x+y+z) to the base file
+            total_values = msd_x + msd_y + msd_z
             total_path = os.path.join(output_dir, base_filename)
             with open(total_path, 'w', newline='') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerow(['Time (fs)', 'MSD'])
-                for time, msd in zip(msd_times, msd_values):
+                for time, msd in zip(msd_times, total_values):
                     csv_writer.writerow([time, msd])
             print(f"Total MSD data has been saved to {total_path}")
             saved_files.append(total_path)
             
+            # Save directional components
             x_path = os.path.join(output_dir, f"{base_path}_x{ext}")
             with open(x_path, 'w', newline='') as csvfile:
                 csv_writer = csv.writer(csvfile)
@@ -885,6 +890,7 @@ def msd_analysis(traj_path, timestep_fs, indices_path=None, ignore_n_images=0,
     else:
         if len(msd_data) == 4:
             msd_times, msd_x, msd_y, msd_z = msd_data
+            msd_values = msd_x + msd_y + msd_z  # use total for downstream analysis
         else:
             msd_values, msd_times = msd_data
     
@@ -1153,7 +1159,8 @@ def calculate_msd_windowed(
                     msd_y[idx2] = np.mean([r[1] for r in results])
                     msd_z[idx2] = np.mean([r[2] for r in results])
                 
-                result[symbol] = (msd_times[:])
+                total_values = msd_x + msd_y + msd_z
+                result[symbol] = (total_values, msd_times[:])
                 result[f'{symbol}_x'] = (msd_x, msd_times[:])
                 result[f'{symbol}_y'] = (msd_y, msd_times[:])
                 result[f'{symbol}_z'] = (msd_z, msd_times[:])
